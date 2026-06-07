@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>CryptoNeon</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding-bottom: 80px;
+        }
+        .header {
+            background: #000;
+            padding: 15px;
+            text-align: center;
+            border-bottom: 2px solid #0ff;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        .header h1 {
+            color: #fff;
+            text-shadow: 0 0 10px #0ff;
+            font-size: 22px;
+            letter-spacing: 2px;
+        }
+        .nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px;
+            background: #000;
+            position: sticky;
+            top: 70px;
+            z-index: 9;
+            overflow-x: auto;
+            border-bottom: 1px solid #222;
+        }
+        .nav button {
+            padding: 8px 12px;
+            border: 1px solid #333;
+            background: #111;
+            color: #888;
+            font-size: 11px;
+            cursor: pointer;
+            white-space: nowrap;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+        }
+        .nav button.active {
+            border-color: #0ff;
+            color: #0ff;
+            text-shadow: 0 0 5px #0ff;
+            box-shadow: 0 0 10px rgba(0,255,255,0.3);
+        }
+        .container { padding: 10px; max-width: 500px; margin: 0 auto; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+
+        .coin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .coin-card {
+            background: #111;
+            border: 1px solid #222;
+            padding: 12px;
+            cursor: pointer;
+            position: relative;
+        }
+        .coin-card:active { border-color: #0ff; }
+        .coin-sym { font-weight: bold; font-size: 14px; }
+        .coin-price { font-size: 15px; margin: 4px 0; }
+        .coin-change { font-size: 11px; }
+        .up { color: #0f0; }
+        .down { color: #f0f; }
+        .coin-star {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            cursor: pointer;
+            z-index: 2;
+        }
+        .coin-vol { font-size: 9px; color: #666; }
+        .pop-bar { height: 2px; background: #222; margin-top: 6px; }
+        .pop-fill { height: 100%; background: #0ff; }
+
+        .search { width: 100%; padding: 10px; background: #111; border: 1px solid #333; color: #fff; margin: 8px 0; font-family: 'Courier New', monospace; }
+        .btn { width: 100%; padding: 12px; border: 1px solid #0ff; background: #000; color: #0ff; font-size: 13px; cursor: pointer; margin: 4px 0; font-family: 'Courier New', monospace; text-transform: uppercase; }
+        .btn:active { background: #0ff; color: #000; }
+
+        .pf-summary { background: #111; border: 1px solid #222; padding: 15px; text-align: center; margin-bottom: 10px; }
+        .pf-value { font-size: 30px; font-weight: bold; color: #0ff; text-shadow: 0 0 10px #0ff; }
+        .pf-item, .alert-item { background: #111; border: 1px solid #222; padding: 10px; margin-bottom: 5px; }
+
+        .profile-card { background: #111; border: 1px solid #222; padding: 15px; text-align: center; margin-bottom: 10px; }
+        .profile-avatar { width: 60px; height: 60px; border-radius: 50%; border: 2px solid #0ff; display: flex; align-items: center; justify-content: center; font-size: 28px; margin: 0 auto 10px; box-shadow: 0 0 15px rgba(0,255,255,0.3); }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .stat-item { background: #111; border: 1px solid #222; padding: 10px; text-align: center; }
+        .stat-value { font-size: 18px; font-weight: bold; }
+        .stat-label { font-size: 8px; color: #666; text-transform: uppercase; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.95);
+            z-index: 100;
+            padding: 20px;
+        }
+        .modal.active { display: flex; align-items: center; justify-content: center; }
+        .modal-box { background: #111; border: 1px solid #0ff; padding: 15px; width: 100%; max-width: 330px; box-shadow: 0 0 20px rgba(0,255,255,0.2); }
+        .modal-close { float: right; background: none; border: 1px solid #333; color: #fff; padding: 4px 8px; cursor: pointer; }
+        .modal-sym { font-size: 20px; font-weight: bold; }
+        .modal-price { font-size: 32px; font-weight: bold; color: #0ff; margin: 8px 0; text-shadow: 0 0 10px #0ff; }
+        .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 10px 0; }
+        .modal-stat { background: #1a1a1a; padding: 8px; text-align: center; }
+        .modal-stat-label { font-size: 7px; color: #666; }
+        .modal-stat-value { font-size: 12px; font-weight: bold; }
+
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #111;
+            border: 1px solid #0ff;
+            color: #0ff;
+            padding: 10px 20px;
+            font-size: 12px;
+            z-index: 200;
+            display: none;
+            white-space: nowrap;
+        }
+        .toast.show { display: block; }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: #000;
+            display: flex;
+            border-top: 1px solid #222;
+            z-index: 10;
+        }
+        .bottom-nav button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            background: none;
+            color: #555;
+            font-size: 8px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            text-transform: uppercase;
+        }
+        .bottom-nav button.active { color: #0ff; }
+        .bottom-nav button span { font-size: 18px; display: block; }
+
+        .empty { text-align: center; padding: 30px; color: #555; }
+        .empty-icon { font-size: 40px; }
+        .section-title { font-size: 12px; margin: 15px 0 8px; text-transform: uppercase; letter-spacing: 1px; }
+    </style>
+</head>
+<body>
+
+    <div class="header"><h1>⚡ CRYPTONEON</h1></div>
+
+    <div class="nav" id="nav">
+        <button class="active" data-tab="prices">💰 PRICES</button>
+        <button data-tab="portfolio">💼 PORTFOLIO <span id="badgePF" style="color:#0ff;">0</span></button>
+        <button data-tab="favorites">⭐ FAV <span id="badgeFav" style="color:#0ff;">0</span></button>
+        <button data-tab="alerts">🔔 ALERTS <span id="badgeAlerts" style="color:#0ff;">0</span></button>
+        <button data-tab="profile">👤 PROFILE</button>
+    </div>
+
+    <div class="container">
+        <div class="tab active" id="tab-prices">
+            <input type="text" class="search" id="searchInput" placeholder="SEARCH COIN..." oninput="updatePrices()">
+            <div class="section-title">▲ TOP GAINERS</div>
+            <div class="coin-grid" id="gainersGrid"></div>
+            <div class="section-title">▼ TOP LOSERS</div>
+            <div class="coin-grid" id="losersGrid"></div>
+            <div class="section-title">◆ POPULAR</div>
+            <div class="coin-grid" id="popularGrid"></div>
+        </div>
+
+        <div class="tab" id="tab-portfolio">
+            <div class="pf-summary">
+                <div style="font-size:9px;color:#666;">TOTAL VALUE</div>
+                <div class="pf-value" id="pfValue">$0.00</div>
+                <div id="pfPnl" style="font-size:12px;">Add coins</div>
+            </div>
+            <div id="pfList"></div>
+            <button class="btn" onclick="addToPortfolio()">+ ADD COIN</button>
+            <button class="btn" onclick="clearPortfolio()" style="border-color:#f0f;color:#f0f;">CLEAR ALL</button>
+        </div>
+
+        <div class="tab" id="tab-favorites">
+            <div class="coin-grid" id="favGrid"></div>
+        </div>
+
+        <div class="tab" id="tab-alerts">
+            <div id="alertList"></div>
+            <button class="btn" onclick="addAlert()">+ NEW ALERT</button>
+        </div>
+
+        <div class="tab" id="tab-profile">
+            <div class="profile-card">
+                <div class="profile-avatar">👤</div>
+                <div id="profName" style="font-size:18px;font-weight:bold;">USER</div>
+                <div id="profUsername" style="color:#0ff;font-size:12px;">@user</div>
+                <div id="profId" style="font-size:9px;color:#666;">ID: ---</div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-item"><div class="stat-value" id="statPF" style="color:#0ff;">0</div><div class="stat-label">ASSETS</div></div>
+                <div class="stat-item"><div class="stat-value" id="statFav" style="color:#f0f;">0</div><div class="stat-label">FAVORITES</div></div>
+                <div class="stat-item"><div class="stat-value" id="statAlert" style="color:#0f0;">0</div><div class="stat-label">ALERTS</div></div>
+            </div>
+            <div class="stat-grid" style="margin-top:6px;">
+                <div class="stat-item"><div class="stat-value" id="statInv" style="color:#fff;">$0</div><div class="stat-label">INVESTED</div></div>
+                <div class="stat-item"><div class="stat-value" id="statCur" style="color:#fff;">$0</div><div class="stat-label">CURRENT</div></div>
+                <div class="stat-item"><div class="stat-value" id="statPnl">$0</div><div class="stat-label">TOTAL P/L</div></div>
+            </div>
+            <button class="btn" onclick="resetAll()" style="margin-top:10px;border-color:#f0f;color:#f0f;">RESET DATA</button>
+        </div>
+    </div>
+
+    <div class="modal" id="coinModal">
+        <div class="modal-box">
+            <button class="modal-close" onclick="closeModal()">✕</button>
+            <div class="modal-sym" id="modSym">BTC</div>
+            <div class="modal-price" id="modPrice">$0.00</div>
+            <div class="modal-stats">
+                <div class="modal-stat"><div class="modal-stat-label">24H</div><div class="modal-stat-value" id="modChange">0%</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">HIGH</div><div class="modal-stat-value" id="modHigh">$0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">LOW</div><div class="modal-stat-value" id="modLow">$0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">VOL</div><div class="modal-stat-value" id="modVolume">$0</div></div>
+            </div>
+            <button class="btn" id="modFavBtn" onclick="toggleFavModal()">⭐ FAVORITE</button>
+            <button class="btn" onclick="addPfFromModal()">+ PORTFOLIO</button>
+            <button class="btn" onclick="addAlertFromModal()">+ ALERT</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="bottom-nav" id="bottomNav">
+        <button class="active" data-tab="prices"><span>💰</span>Prices</button>
+        <button data-tab="portfolio"><span>💼</span>Portfolio</button>
+        <button data-tab="favorites"><span>⭐</span>Favorites</button>
+        <button data-tab="alerts"><span>🔔</span>Alerts</button>
+        <button data-tab="profile"><span>👤</span>Profile</button>
+    </div>
+
+    <script>
+        // Данные
+        let allCoins = [];
+        let favorites = JSON.parse(localStorage.getItem('nfav') || '[]');
+        let portfolio = JSON.parse(localStorage.getItem('npf') || '[]');
+        let alerts = JSON.parse(localStorage.getItem('nalert') || '[]');
+        let currentCoin = 'BTC';
+
+        // Загрузка API
+        async function loadData() {
+            try {
+                let r = await fetch('https://api.binance.com/api/v3/ticker/24hr');
+                let d = await r.json();
+                allCoins = d.filter(i => i.symbol.endsWith('USDT')).map(i => ({
+                    s: i.symbol.replace('USDT', ''),
+                    p: parseFloat(i.lastPrice),
+                    c: parseFloat(i.priceChangePercent),
+                    h: parseFloat(i.highPrice),
+                    l: parseFloat(i.lowPrice),
+                    v: parseFloat(i.volume),
+                    q: parseFloat(i.quoteVolume)
+                })).filter(c => c.p > 0 && c.q > 50000);
+                allCoins.sort((a,b) => b.q - a.q);
+                allCoins.forEach((c,i) => c.rank = i + 1);
+                updateAll();
+            } catch(e) {}
+        }
+
+        function fmt(p) {
+            if (!p) return '0';
+            if (p < 0.001) return p.toFixed(6);
+            if (p < 1) return p.toFixed(4);
+            if (p < 100) return p.toFixed(2);
+            return p.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
+        }
+
+        function fmtV(v) {
+            if (v > 1e9) return '$' + (v/1e9).toFixed(1) + 'B';
+            if (v > 1e6) return '$' + (v/1e6).toFixed(0) + 'M';
+            return '$' + (v/1e3).toFixed(0) + 'K';
+        }
+
+        function updateAll() {
+            updatePrices();
+            updatePortfolio();
+            updateFavorites();
+            updateAlerts();
+            updateProfile();
+            updateBadges();
+        }
+
+        function coinCard(c) {
+            let fav = favorites.includes(c.s);
+            let pop = Math.min(100, Math.round((c.q / (allCoins[0]?.q || 1)) * 100));
+            return `<div class="coin-card" onclick="openModal('${c.s}')">
+                <span class="coin-star" onclick="event.stopPropagation();toggleFav('${c.s}')">${fav?'⭐':'☆'}</span>
+                <div class="coin-sym">${c.s} <span style="color:#666;font-size:9px;">#${c.rank}</span></div>
+                <div class="coin-price" style="color:${c.c>=0?'#0f0':'#f0f'}">$${fmt(c.p)}</div>
+                <div class="coin-change ${c.c>=0?'up':'down'}">${c.c>=0?'▲ +':'▼ '}${c.c.toFixed(2)}%</div>
+                <div class="coin-vol">VOL: ${fmtV(c.q)}</div>
+                <div class="pop-bar"><div class="pop-fill" style="width:${pop}%"></div></div>
+            </div>`;
+        }
+
+        function updatePrices() {
+            let q = document.getElementById('searchInput')?.value || '';
+            let coins = q ? allCoins.filter(c => c.s.toLowerCase().includes(q.toLowerCase())) : allCoins;
+            document.getElementById('gainersGrid').innerHTML = [...coins].sort((a,b)=>b.c-a.c).slice(0,6).map(coinCard).join('');
+            document.getElementById('losersGrid').innerHTML = [...coins].sort((a,b)=>a.c-b.c).slice(0,6).map(coinCard).join('');
+            document.getElementById('popularGrid').innerHTML = [...coins].sort((a,b)=>b.q-a.q).slice(0,20).map(coinCard).join('');
+        }
+
+        function updatePortfolio() {
+            let list = document.getElementById('pfList');
+            let val = document.getElementById('pfValue');
+            let pnl = document.getElementById('pfPnl');
+            if (portfolio.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">💼</div><p>EMPTY</p></div>';
+                val.textContent = '$0.00';
+                pnl.innerHTML = '<span style="color:#666;">Add coins</span>';
+                return;
+            }
+            let ti = 0, tc = 0;
+            list.innerHTML = portfolio.map((item,i) => {
+                let coin = allCoins.find(c => c.s === item.symbol);
+                let cp = coin ? coin.p : 0;
+                let ch = coin ? coin.c : 0;
+                let inv = item.amount * item.buyPrice;
+                let cur = item.amount * cp;
+                let p = cur - inv;
+                let pp = inv > 0 ? (p/inv)*100 : 0;
+                ti += inv; tc += cur;
+                return `<div class="pf-item">
+                    <div style="display:flex;justify-content:space-between;">
+                        <strong>${item.symbol}</strong>
+                        <span style="color:#f0f;cursor:pointer;" onclick="removePf(${i})">✕</span>
+                    </div>
+                    <div style="font-size:10px;color:#666;">${item.amount} × $${fmt(item.buyPrice)} = $${fmt(inv)}</div>
+                    <div style="font-size:10px;color:#666;">NOW: $${fmt(cp)} | 24H: <span class="${ch>=0?'up':'down'}">${ch>=0?'+':''}${ch.toFixed(2)}%</span></div>
+                    <div style="font-weight:bold;color:${p>=0?'#0f0':'#f0f'};">P/L: $${p.toFixed(2)} (${pp.toFixed(2)}%)</div>
+                </div>`;
+            }).join('');
+            let tp = tc - ti;
+            val.textContent = '$' + fmt(tc);
+            pnl.innerHTML = `<span style="color:${tp>=0?'#0f0':'#f0f'};">P/L: $${tp.toFixed(2)} (${ti>0?(tp/ti*100).toFixed(2):0}%)</span>`;
+        }
+
+        function updateFavorites() {
+            let favs = allCoins.filter(c => favorites.includes(c.s));
+            document.getElementById('favGrid').innerHTML = favs.length > 0 ? favs.map(coinCard).join('') : '<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">⭐</div><p>NO FAVORITES</p></div>';
+        }
+
+        function updateAlerts() {
+            let list = document.getElementById('alertList');
+            if (alerts.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">🔔</div><p>NO ALERTS</p></div>';
+                return;
+            }
+            list.innerHTML = alerts.map((a,i) => {
+                let coin = allCoins.find(c => c.s === a.symbol);
+                return `<div class="alert-item" style="display:flex;justify-content:space-between;align-items:center;">
+                    <div><strong>${a.symbol}</strong> <span style="color:${a.dir==='above'?'#0f0':'#f0f'};font-size:10px;">${a.dir==='above'?'▲ ABOVE':'▼ BELOW'} $${fmt(a.price)}</span>
+                    <div style="font-size:9px;color:#666;">NOW: ${coin?'$'+fmt(coin.p):'?'}</div></div>
+                    <span style="color:#f0f;cursor:pointer;" onclick="removeAlert(${i})">✕</span>
+                </div>`;
+            }).join('');
+        }
+
+        function updateProfile() {
+            let u = (window.Telegram?.WebApp?.initDataUnsafe?.user) || {};
+            document.getElementById('profName').textContent = u.first_name || 'USER';
+            document.getElementById('profUsername').textContent = u.username ? '@'+u.username : 'ANONYMOUS';
+            document.getElementById('profId').textContent = 'ID: ' + (u.id || '---');
+            document.getElementById('statPF').textContent = portfolio.length;
+            document.getElementById('statFav').textContent = favorites.length;
+            document.getElementById('statAlert').textContent = alerts.length;
+            let ti = 0, tc = 0;
+            portfolio.forEach(item => {
+                let coin = allCoins.find(c => c.s === item.symbol);
+                ti += item.amount * item.buyPrice;
+                tc += item.amount * (coin ? coin.p : 0);
+            });
+            document.getElementById('statInv').textContent = '$' + fmt(ti);
+            document.getElementById('statCur').textContent = '$' + fmt(tc);
+            let tp = tc - ti;
+            document.getElementById('statPnl').textContent = (tp>=0?'+':'') + '$' + fmt(Math.abs(tp));
+            document.getElementById('statPnl').style.color = tp>=0?'#0f0':'#f0f';
+        }
+
+        function updateBadges() {
+            document.getElementById('badgePF').textContent = portfolio.length;
+            document.getElementById('badgeFav').textContent = favorites.length;
+            document.getElementById('badgeAlerts').textContent = alerts.length;
+        }
+
+        // НАВИГАЦИЯ - ИСПРАВЛЕНО
+        function switchTab(tabName) {
+            console.log('Switching to:', tabName);
+            
+            // Скрываем все вкладки
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            
+            // Показываем нужную
+            let tabEl = document.getElementById('tab-' + tabName);
+            if (tabEl) tabEl.classList.add('active');
+            
+            // Обновляем верхнюю навигацию
+            document.querySelectorAll('#nav button').forEach(b => b.classList.remove('active'));
+            
+            // Обновляем нижнюю навигацию
+            document.querySelectorAll('#bottomNav button').forEach(b => b.classList.remove('active'));
+            
+            // Находим и активируем кнопки
+            document.querySelectorAll(`[data-tab="${tabName}"]`).forEach(b => b.classList.add('active'));
+        }
+
+        // Добавляем обработчики на кнопки
+        document.querySelectorAll('#nav button, #bottomNav button').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                let tab = this.getAttribute('data-tab');
+                if (tab) switchTab(tab);
+            });
+        });
+
+        // МОДАЛЬНОЕ ОКНО
+        function openModal(sym) {
+            currentCoin = sym;
+            let c = allCoins.find(x => x.s === sym);
+            if (!c) return;
+            document.getElementById('modSym').textContent = c.s + ' #' + c.rank;
+            document.getElementById('modPrice').textContent = '$' + fmt(c.p);
+            document.getElementById('modChange').textContent = (c.c>=0?'+':'') + c.c.toFixed(2) + '%';
+            document.getElementById('modChange').style.color = c.c>=0?'#0f0':'#f0f';
+            document.getElementById('modHigh').textContent = '$' + fmt(c.h);
+            document.getElementById('modLow').textContent = '$' + fmt(c.l);
+            document.getElementById('modVolume').textContent = fmtV(c.q);
+            document.getElementById('modFavBtn').textContent = favorites.includes(sym) ? '⭐ UNFAVORITE' : '☆ FAVORITE';
+            document.getElementById('coinModal').classList.add('active');
+        }
+
+        function closeModal() { document.getElementById('coinModal').classList.remove('active'); }
+
+        function toggleFav(sym) {
+            let i = favorites.indexOf(sym);
+            if (i >= 0) { favorites.splice(i,1); toast('REMOVED'); }
+            else { favorites.push(sym); toast('ADDED'); }
+            localStorage.setItem('nfav', JSON.stringify(favorites));
+            updateAll();
+        }
+
+        function toggleFavModal() { toggleFav(currentCoin); }
+
+        function addToPortfolio() {
+            let s = prompt('Coin symbol (BTC):');
+            if (!s) return;
+            let a = prompt('Amount:');
+            if (!a || isNaN(a)) return;
+            let p = prompt('Buy price USD:');
+            if (!p || isNaN(p)) return;
+            portfolio.push({symbol:s.toUpperCase(), amount:parseFloat(a), buyPrice:parseFloat(p)});
+            localStorage.setItem('npf', JSON.stringify(portfolio));
+            updateAll();
+            switchTab('portfolio');
+            toast('ADDED TO PORTFOLIO');
+        }
+
+        function addPfFromModal() {
+            let a = prompt('Amount ' + currentCoin + ':','1');
+            if (!a || isNaN(a)) return;
+            let c = allCoins.find(x => x.s === currentCoin);
+            let p = prompt('Buy price USD:', c ? fmt(c.p) : '');
+            if (!p || isNaN(p)) return;
+            portfolio.push({symbol:currentCoin, amount:parseFloat(a), buyPrice:parseFloat(p)});
+            localStorage.setItem('npf', JSON.stringify(portfolio));
+            updateAll();
+            closeModal();
+            toast('ADDED');
+        }
+
+        function removePf(i) {
+            portfolio.splice(i,1);
+            localStorage.setItem('npf', JSON.stringify(portfolio));
+            updateAll();
+            toast('REMOVED');
+        }
+
+        function clearPortfolio() {
+            if (portfolio.length === 0) return;
+            if (confirm('Delete all?')) {
+                portfolio = [];
+                localStorage.setItem('npf', JSON.stringify(portfolio));
+                updateAll();
+                toast('CLEARED');
+            }
+        }
+
+        function addAlert() {
+            let s = prompt('Coin symbol:');
+            if (!s) return;
+            let d = confirm('ABOVE price?\nOK = Above\nCancel = Below') ? 'above' : 'below';
+            let p = prompt('Target price USD:');
+            if (!p || isNaN(p)) return;
+            alerts.push({symbol:s.toUpperCase(), dir:d, price:parseFloat(p)});
+            localStorage.setItem('nalert', JSON.stringify(alerts));
+            updateAll();
+            toast('ALERT CREATED');
+        }
+
+        function addAlertFromModal() {
+            let d = confirm('ABOVE price?\nOK = Above\nCancel = Below') ? 'above' : 'below';
+            let c = allCoins.find(x => x.s === currentCoin);
+            let p = prompt('Target price USD:', c ? fmt(c.p) : '');
+            if (!p || isNaN(p)) return;
+            alerts.push({symbol:currentCoin, dir:d, price:parseFloat(p)});
+            localStorage.setItem('nalert', JSON.stringify(alerts));
+            updateAll();
+            closeModal();
+            toast('ALERT CREATED');
+        }
+
+        function removeAlert(i) {
+            alerts.splice(i,1);
+            localStorage.setItem('nalert', JSON.stringify(alerts));
+            updateAll();
+            toast('ALERT REMOVED');
+        }
+
+        function resetAll() {
+            if (confirm('RESET ALL DATA?')) {
+                portfolio = []; favorites = []; alerts = [];
+                localStorage.clear();
+                updateAll();
+                toast('RESET DONE');
+            }
+        }
+
+        function toast(msg) {
+            let t = document.getElementById('toast');
+            t.textContent = '⚡ ' + msg;
+            t.classList.add('show');
+            clearTimeout(window._tt);
+            window._tt = setTimeout(() => t.classList.remove('show'), 2000);
+        }
+
+        // Проверка алертов
+        setInterval(() => {
+            alerts.forEach((a,i) => {
+                let c = allCoins.find(x => x.s === a.symbol);
+                if (!c) return;
+                if ((a.dir === 'above' && c.p >= a.price) || (a.dir === 'below' && c.p <= a.price)) {
+                    alerts.splice(i,1);
+                    localStorage.setItem('nalert', JSON.stringify(alerts));
+                    updateAll();
+                    alert('🚨 ALERT! ' + a.symbol + ' = $' + fmt(c.p));
+                }
+            });
+        }, 15000);
+
+        // Запуск
+        loadData();
+        setInterval(loadData, 30000);
+    </script>
+</body>
+  </html>
