@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypto Tracker Pro</title>
+    <style>
+        :root {
+            --bg: #f5f6f8; --bg2: #ffffff; --card: #ffffff;
+            --text: #2c3e50; --text2: #7f8c8d; --text3: #bdc3c7;
+            --border: #e8ecf1; --accent: #2c3e50;
+            --green: #27ae60; --red: #e74c3c;
+            --shadow: 0 1px 3px rgba(0,0,0,0.06);
+        }
+        .dark-theme {
+            --bg: #1a1d23; --bg2: #21252b; --card: #21252b;
+            --text: #e1e4e8; --text2: #8b949e; --text3: #6e7681;
+            --border: #30363d; --accent: #e1e4e8;
+            --green: #3fb950; --red: #f85149;
+            --shadow: 0 1px 3px rgba(0,0,0,0.3);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: var(--bg); color: var(--text);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            min-height: 100vh; padding-bottom: 70px; font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+        }
+        .header {
+            background: var(--bg2); padding: 12px 16px; position: sticky; top: 0; z-index: 10;
+            border-bottom: 1px solid var(--border); box-shadow: var(--shadow);
+            display: flex; align-items: center; gap: 10px;
+        }
+        .header-logo { font-size: 22px; }
+        .header h1 { font-size: 16px; font-weight: 600; }
+        .header p { font-size: 11px; color: var(--text2); }
+
+        .nav {
+            display: flex; gap: 6px; padding: 8px 12px; background: var(--bg);
+            position: sticky; top: 56px; z-index: 9; overflow-x: auto;
+            border-bottom: 1px solid var(--border);
+        }
+        .nav-btn {
+            padding: 7px 14px; border: 1.5px solid var(--border); background: var(--card);
+            color: var(--text2); font-size: 12px; font-weight: 500; cursor: pointer;
+            white-space: nowrap; border-radius: 20px; flex-shrink: 0;
+            transition: all 0.2s; box-shadow: var(--shadow);
+        }
+        .nav-btn.active { border-color: var(--accent); background: var(--accent); color: var(--bg2); font-weight: 600; }
+        .nav-badge { font-size: 10px; margin-left: 3px; font-weight: 700; }
+
+        .container { padding: 12px; max-width: 520px; margin: 0 auto; }
+        .tab { display: none; }
+        .tab.active { display: block; animation: fade 0.25s ease; }
+        @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+
+        .search {
+            width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+            border-radius: 12px; font-size: 13px; outline: none; margin: 4px 0 10px;
+            background: var(--card); color: var(--text); box-shadow: var(--shadow);
+        }
+        .search:focus { border-color: var(--accent); }
+
+        .section-title { font-size: 12px; font-weight: 600; margin: 16px 0 8px; color: var(--text2); }
+        .coin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .coin-card {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px; cursor: pointer; transition: all 0.2s; box-shadow: var(--shadow);
+        }
+        .coin-card:active { transform: scale(0.98); border-color: var(--accent); }
+        .coin-sym { font-size: 13px; font-weight: 600; }
+        .coin-rank { font-size: 9px; color: var(--text3); }
+        .coin-star { float: right; font-size: 14px; cursor: pointer; }
+        .coin-price { font-size: 15px; font-weight: 600; margin: 3px 0; }
+        .coin-change { font-size: 11px; font-weight: 600; }
+        .up { color: var(--green); } .down { color: var(--red); }
+
+        .btn {
+            width: 100%; padding: 11px 16px; border: 1.5px solid var(--accent);
+            background: var(--card); color: var(--accent); font-size: 13px;
+            font-weight: 600; cursor: pointer; margin: 4px 0; border-radius: 12px;
+            transition: all 0.2s; box-shadow: var(--shadow);
+        }
+        .btn:active { transform: scale(0.98); }
+        .btn-filled { background: var(--accent); color: var(--bg2); }
+
+        .pf-summary {
+            background: var(--card); border: 1.5px solid var(--border); border-radius: 14px;
+            padding: 16px; text-align: center; margin-bottom: 10px; box-shadow: var(--shadow);
+        }
+        .pf-value { font-size: 28px; font-weight: 700; margin: 6px 0; }
+
+        .pf-item, .alert-item {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 10px 12px; margin-bottom: 6px; box-shadow: var(--shadow);
+        }
+
+        .profile-card {
+            background: var(--card); border: 1.5px solid var(--border); border-radius: 14px;
+            padding: 18px; text-align: center; margin-bottom: 10px; box-shadow: var(--shadow);
+        }
+        .profile-avatar {
+            width: 56px; height: 56px; border-radius: 50%; background: var(--accent);
+            color: var(--bg2); display: flex; align-items: center; justify-content: center;
+            font-size: 24px; margin: 0 auto 10px;
+        }
+        .profile-name { font-size: 16px; font-weight: 600; }
+        .profile-username { color: var(--text2); font-size: 12px; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+        .stat-item {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px; text-align: center; box-shadow: var(--shadow);
+        }
+        .stat-value { font-size: 18px; font-weight: 600; }
+        .stat-label { font-size: 9px; color: var(--text3); margin-top: 2px; }
+
+        .settings-section {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 12px; padding: 12px; margin-bottom: 8px; box-shadow: var(--shadow);
+        }
+        .settings-title { font-size: 13px; font-weight: 600; margin-bottom: 10px; }
+        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--border); }
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-label { font-size: 13px; font-weight: 500; }
+
+        .switch {
+            width: 44px; height: 24px; background: var(--border); border-radius: 12px;
+            cursor: pointer; position: relative; flex-shrink: 0;
+        }
+        .switch.on { background: var(--accent); }
+        .switch::after {
+            content: ''; position: absolute; width: 18px; height: 18px;
+            background: #fff; border-radius: 50%; top: 3px; left: 3px; transition: 0.2s;
+        }
+        .switch.on::after { left: 23px; }
+
+        select, input, textarea {
+            width: 100%; padding: 10px 12px; border: 1.5px solid var(--border);
+            border-radius: 10px; background: var(--card); color: var(--text);
+            font-size: 13px; margin: 4px 0; box-shadow: var(--shadow);
+        }
+        textarea { min-height: 70px; resize: vertical; font-family: inherit; }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.75); z-index: 100; padding: 16px;
+        }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-box {
+            background: var(--card); border-radius: 16px; padding: 16px;
+            width: 100%; max-width: 360px; max-height: 90vh; overflow-y: auto;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+        }
+        .modal-close {
+            float: right; background: var(--bg); color: var(--text);
+            border: 1.5px solid var(--border); width: 28px; height: 28px;
+            border-radius: 50%; cursor: pointer; font-size: 14px;
+        }
+        .modal-sym { font-size: 18px; font-weight: 600; }
+        .modal-price { font-size: 30px; font-weight: 700; margin: 8px 0; }
+        .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 10px 0; }
+        .modal-stat { background: var(--bg); border-radius: 10px; padding: 8px; text-align: center; }
+        .modal-stat-label { font-size: 9px; color: var(--text2); }
+        .modal-stat-value { font-size: 13px; font-weight: 600; }
+        .modal-chart { width: 100%; height: 140px; margin: 8px 0; background: var(--bg); border-radius: 10px; }
+
+        .toast {
+            position: fixed; bottom: 85px; left: 50%; transform: translateX(-50%);
+            background: #2c3e50; color: #fff; padding: 10px 18px; border-radius: 20px;
+            font-size: 12px; font-weight: 500; z-index: 200; display: none; white-space: nowrap;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .toast.show { display: block; }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background: var(--card);
+            display: flex; border-top: 1px solid var(--border); z-index: 10;
+            box-shadow: 0 -1px 3px rgba(0,0,0,0.04);
+        }
+        .bottom-btn {
+            flex: 1; padding: 8px 4px; border: none; background: none;
+            color: var(--text3); font-size: 10px; font-weight: 500; cursor: pointer;
+        }
+        .bottom-btn.on { color: var(--accent); }
+        .bottom-btn span { font-size: 18px; display: block; margin-bottom: 2px; }
+
+        .empty { text-align: center; padding: 24px; color: var(--text3); font-size: 12px; }
+        .empty-icon { font-size: 36px; margin-bottom: 6px; }
+
+        .news-item {
+            background: var(--card); border: 1px solid var(--border); border-radius: 12px;
+            padding: 12px; margin-bottom: 8px; cursor: pointer; box-shadow: var(--shadow);
+        }
+        .news-source {
+            display: inline-block; padding: 2px 8px; background: var(--bg);
+            border-radius: 8px; font-size: 10px; font-weight: 600; color: var(--text2); margin-bottom: 6px;
+        }
+        .news-title { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+        .news-desc { font-size: 11px; color: var(--text2); margin-bottom: 6px; }
+        .news-date { font-size: 10px; color: var(--text3); }
+
+        .achievement {
+            display: inline-flex; align-items: center; gap: 5px; padding: 5px 10px;
+            border-radius: 14px; font-size: 10px; font-weight: 500; margin: 3px;
+            background: var(--bg); border: 1px solid var(--border);
+        }
+        .achievement.unlocked { background: var(--accent); color: var(--bg2); border-color: var(--accent); }
+        .achievement.locked { opacity: 0.5; }
+
+        .info-row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text2); }
+        .info-value { font-weight: 500; }
+
+        .support-status { padding: 8px 12px; border-radius: 10px; font-size: 11px; text-align: center; margin-top: 6px; }
+        .support-success { background: rgba(39,174,96,0.1); color: var(--green); }
+        .support-error { background: rgba(231,76,60,0.1); color: var(--red); }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span class="header-logo">📊</span>
+    <div><h1>Crypto Tracker Pro</h1><p>Real-time tracker</p></div>
+</div>
+
+<div class="nav" id="topNav">
+    <button class="nav-btn active" data-tab="prices">💰 Цены</button>
+    <button class="nav-btn" data-tab="portfolio">💼 Портфель <span class="nav-badge" id="badgePF">0</span></button>
+    <button class="nav-btn" data-tab="favorites">⭐ Избр <span class="nav-badge" id="badgeFav">0</span></button>
+    <button class="nav-btn" data-tab="alerts">🔔 Алерты <span class="nav-badge" id="badgeAlerts">0</span></button>
+    <button class="nav-btn" data-tab="news">📰 Новости</button>
+    <button class="nav-btn" data-tab="converter">💱 Конвертер</button>
+    <button class="nav-btn" data-tab="profile">👤 Профиль</button>
+</div>
+
+<div class="container">
+    <!-- PRICES -->
+    <div class="tab active" id="tab-prices">
+        <input type="text" class="search" id="searchInput" placeholder="🔍 Поиск..." oninput="updatePrices()">
+        <div class="section-title">📈 Лидеры роста</div><div class="coin-grid" id="gainersGrid"></div>
+        <div class="section-title">📉 Падение</div><div class="coin-grid" id="losersGrid"></div>
+        <div class="section-title">🔥 Все монеты</div><div class="coin-grid" id="popularGrid"></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="tab" id="tab-portfolio">
+        <div class="pf-summary">
+            <div style="font-size:10px;color:var(--text2);">ОБЩАЯ СТОИМОСТЬ</div>
+            <div class="pf-value" id="pfValue">$0.00</div>
+            <div id="pfPnl" style="font-size:12px;"></div>
+        </div>
+        <div id="pfList"></div>
+        <button class="btn btn-filled" onclick="addToPortfolio()">+ Добавить</button>
+        <button class="btn" onclick="clearPortfolio()">Очистить</button>
+        <button class="btn" onclick="exportPortfolio()">📥 CSV</button>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="tab" id="tab-favorites"><div class="coin-grid" id="favGrid"></div></div>
+
+    <!-- ALERTS -->
+    <div class="tab" id="tab-alerts"><div id="alertList"></div><button class="btn btn-filled" onclick="addAlert()">+ Ал
+
+ерт</button></div>
+
+    <!-- NEWS -->
+    <div class="tab" id="tab-news"><div class="section-title">📰 Новости</div><div id="newsList"><div class="empty">Загрузка...</div></div></div>
+
+    <!-- CONVERTER -->
+    <div class="tab" id="tab-converter">
+        <div class="pf-summary">
+            <div class="section-title" style="margin-top:0;">💱 Конвертер</div>
+            <select id="convFrom" onchange="convert()"><option value="BTC">BTC</option><option value="ETH">ETH</option><option value="USDT">USDT</option><option value="SOL">SOL</option></select>
+            <input type="number" id="convAmount" placeholder="Сумма" value="1" oninput="convert()">
+            <div style="text-align:center;padding:4px;">⬇</div>
+            <select id="convTo" onchange="convert()"><option value="USDT">USDT</option><option value="BTC">BTC</option><option value="USD">USD</option></select>
+            <div style="font-size:18px;font-weight:700;padding:8px;" id="convResult">= $0.00</div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="tab" id="tab-profile">
+        <div class="profile-card">
+            <div class="profile-avatar">👤</div>
+            <div class="profile-name" id="profName">Пользователь</div>
+            <div class="profile-username" id="profUsername">@user</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-item"><div class="stat-value" id="statPF">0</div><div class="stat-label">Активы</div></div>
+            <div class="stat-item"><div class="stat-value" id="statFav">0</div><div class="stat-label">Избранное</div></div>
+            <div class="stat-item"><div class="stat-value" id="statAlert">0</div><div class="stat-label">Алерты</div></div>
+        </div>
+
+        <div class="settings-section" style="margin-top:8px;">
+            <div class="settings-title">🏆 Достижения</div><div id="achievementsList"></div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-title">⚙️ Настройки</div>
+            <div class="toggle-row"><span>🌙 Тёмная тема</span><div class="switch" id="themeSwitch" onclick="toggleTheme()"></div></div>
+            <div style="padding:8px 0;"><span>🌐 Язык</span>
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="auto">Авто</option><option value="en">English</option><option value="ru">Русский</option>
+                    <option value="es">Español</option><option value="de">Deutsch</option><option value="fr">Français</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-title">📧 Поддержка</div>
+            <input type="text" id="supportName" placeholder="Ваше имя">
+            <textarea id="supportMessage" placeholder="Опишите проблему..."></textarea>
+            <div id="supportStatus"></div>
+            <button class="btn btn-filled" onclick="sendSupport()">Отправить</button>
+        </div>
+
+        <div class="settings-section">
+            <div class="settings-title">📋 Информация</div>
+            <div class="info-row"><span class="info-label">Имя</span><span class="info-value" id="infoName">-</span></div>
+            <div class="info-row"><span class="info-label">Страна</span><span class="info-value" id="infoCountry">-</span></div>
+            <div class="info-row"><span class="info-label">Язык</span><span class="info-value" id="infoLang">-</span></div>
+            <div class="info-row"><span class="info-label">Сессии</span><span class="info-value" id="infoVisits">1</span></div>
+        </div>
+
+        <button class="btn" onclick="resetAll()" style="color:var(--red);border-color:var(--red);">🗑 Сброс</button>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="coinModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div class="modal-sym" id="modSym">BTC</div>
+        <div class="modal-price" id="modPrice">$0.00</div>
+        <div class="modal-chart"><canvas id="modalChart"></canvas></div>
+        <div class="modal-stats">
+            <div class="modal-stat"><div class="modal-stat-label">24ч</div><div class="modal-stat-value" id="modChange">0%</div></div>
+            <div class="modal-stat"><div class="modal-stat-label">Макс</div><div class="modal-stat-value" id="modHigh">$0</div></div>
+            <div class="modal-stat"><div class="modal-stat-label">Мин</div><div class="modal-stat-value" id="modLow">$0</div></div>
+            <div class="modal-stat"><div class="modal-stat-label">Объём</div><div class="modal-stat-value" id="modVolume">$0</div></div>
+        </div>
+        <div class="modal-stat" style="margin:4px 0;"><div class="modal-stat-label">RSI (14)</div><div class="modal-stat-value" id="modRSI">-</div></div>
+        <button class="btn btn-filled" onclick="toggleFavModal()">⭐ Избранное</button>
+        <button class="btn" onclick="addPfFromModal()">+ Портфель</button>
+        <button class="btn" onclick="addAlertFromModal()">+ Алерт</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bottom-nav" id="bottomNav">
+    <button class="bottom-btn on" data-tab="prices"><span>💰</span>Цены</button>
+    <button class="bottom-btn" data-tab="portfolio"><span>💼</span>Портфель</button>
+    <button class="bottom-btn" data-tab="favorites"><span>⭐</span>Избранное</button>
+    <button class="bottom-btn" data-tab="converter"><span>💱</span>Конвертер</button>
+    <button class="bottom-btn" data-tab="profile"><span>👤</span>Профиль</button>
+</div>
+
+<script>
+const tg = window.Telegram?.WebApp; if(tg){tg.expand();tg.ready()}
+
+let allCoins=[], favorites=JSON.parse(localStorage.getItem('_fav')||'[]'),
+    portfolio=JSON.parse(localStorage.getItem('_pf')||'[]'),
+    alerts=JSON.parse(localStorage.getItem('_al')||'[]'),
+    currentCoin='BTC', darkMode=JSON.parse(localStorage.getItem('_dm')||'false'),
+    currentLang=localStorage.getItem('_lang')||'ru',
+    visits=parseInt(localStorage.getItem('_vis')||'0');
+visits++; localStorage.setItem('_vis', visits);
+
+if(darkMode){document.body.classList.add('dark-theme');document.getElementById('themeSwitch').classList.add('on')}
+document.getElementById('languageSelect').value = currentLang;
+
+// ПЕРЕВОДЫ
+const TR = {
+    ru: { search:'🔍 Поиск...', gainers:'📈 Лидеры роста', losers:'📉 Падение', all:'🔥 Все монеты',
+        pf_total:'ОБЩАЯ СТОИМОСТЬ', pf_empty:'Портфель пуст', add_coin:'+ Добавить', clear:'Очистить',
+        export:'📥 CSV', new_alert:'+ Алерт', news_title:'📰 Новости', converter:'💱 Конвертер',
+        settings:'⚙️ Настройки', dark:'🌙 Тёмная тема', lang_label:'🌐 Язык', support:'📧 Поддержка',
+        info:'📋 Информация', achievements:'🏆 Достижения', reset:'🗑 Сброс',
+        toast_add:'Добавлено!', toast_rem:'Удалено', toast_clear:'Очищено', toast_alert:'Алерт создан!',
+        toast_export:'Скачано!', toast_reset:'Сброшено', toast_dark_on:'Тёмная', toast_dark_off:'Светлая',
+        support_ok:'✅ Отправлено!', support_err:'Введите сообщение'
+    },
+    en: { search:'🔍 Search...', gainers:'📈 Top Gainers', losers:'📉 Top Losers', all:'🔥 All Coins',
+        pf_total:'TOTAL VALUE', pf_empty:'Portfolio empty', add_coin:'+ Add Coin', clear:'Clear',
+        export:'📥 CSV', new_alert:'+ Alert', news_title:'📰 News', converter:'💱 Converter',
+        settings:'⚙️ Settings', dark:'🌙 Dark Mode', lang_label:'🌐 Language', support:'📧 Support',
+        info:'📋 Info', achievements:'🏆 Achievements', reset:'🗑 Reset',
+        toast_add:'Added!', toast_rem:'Removed', toast_clear:'Cleared', toast_alert:'Alert created!',
+        toast_export:'Downloaded!', toast_reset:'Reset', toast_dark_on:'Dark on', toast_dark_off:'Light on',
+        support_ok:'✅ Sent!', support_err:'Enter message'
+    }
+};
+
+function _(key){ return (TR[currentLang]||TR['ru'])[key] || key; }
+
+function fmt(p){if(!p)return'0';if(p<0.001)return p.toFixed(6);if(p<1)return p.toFixed(4);if(p<100)return p.toFixed(2);return p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtV(v){if(v>1e9)return'$'+(v/1e9).toFixed(1)+'B';if(v>1e6)return'$'+(v/1e6).toFixed(0)+'M';return'$'+(v/1e3).toFixed(0)+'K'}
+
+async function loadData(){
+    try{
+        let r=await fetch('https://api.binance.com/api/v3/ticker/24hr'), d=await r.json();
+        allCoins=d.filter(i=>i.symbol.endsWith('USDT')).filter(i=>{let s=i.symbol.replace('USDT','');return /^[A-Z0-9]+$/.test(s)&&s.length<=6}).map(i=>({s:i.symbol.replace('USDT',''),p:parseFloat(i.lastPrice),c:parseFloat(i.priceChangePercent),h:parseFloat(i.highPrice),l:parseFloat(i.lowPrice),v:parseFloat(i.volume),q:parseFloat(i.quoteVolume)})).filter(c=>c.p>0.0001&&c.q>100000);
+        allCoins.sort((a,b)=>b.q-a.q); allCoins.forEach((c,i)=>c.rank=i+1);
+        updateAll();
+    }catch(e){}
+}
+
+async function loadChart(sym,canvasId){
+    try{
+        let r=await fetch(`https://api.binance.com/api/v3/klines?symbol=${sym}USDT&interval=1h&limit=48`), d=await r.json();
+        let prices=d.map(k=>parseFloat(k[4])); drawChart(canvasId,prices);
+        if(prices.length>=15){
+            let gains=0,losses=0;
+            for(let i=prices.length-14;i<prices.length-1;i++){let diff=prices[i+1]-prices[i];if(diff>0)gains+=diff;else losses+=Math.abs(diff)}
+            let rs=losses===0?100:(gains/14)/(losses/14), rsi=100-(100/(1+rs));
+            document.getElementById('modRSI').textContent=Math.round(rsi);
+            document.getElementById('modRSI').style.color=rsi>70?'var(--red)':rsi<30?'var(--green)':'var(--text)';
+        }
+    }catch(e){}
+}
+
+function drawChart(canvasId,prices){
+    let canvas=document.getElementById(canvasId); if(!canvas||prices.length<2)return;
+    let ctx=canvas.getContext('2d'), w=canvas.parentElement.offsetWidth||300, h=canvas.parentElement.offsetHeight||140;
+    canvas.width=w; canvas.height=h;
+    let min=Math.min(...prices), max=Math.max(...prices), range=max-min||1, up=prices[prices.length-1]>=prices[0];
+    ctx.clearRect(0,0,w,h);
+    let grad=ctx.createLinearGradient(0,0,0,h);
+    grad.addColorStop(0,up?'rgba(39,174,96,0.25)':'rgba(231,76,60,0.25)'); grad.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.beginPath(); ctx.strokeStyle=up?'#27ae60':'#e74c3c'; ctx.lineWidth=1.5;
+    prices.forEach((p,i)=>{let x=(i/(prices.length-1))*w, y=h-((p-min)/range)*(h-15)-8; if(i===0)ctx.moveTo(x,y); else ctx.lineTo(x,y)});
+    ctx.stroke(); ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fillStyle=grad; ctx.fill();
+}
+
+function coinCard(c){
+    let fav=favorites.includes(c.s);
+    return `<div class="coin-card" onclick="openModal('${c.s}')"><span class="coin-star" onclick="event.stopPropagation();toggleFav('${c.s}')">${fav?'⭐':'☆'}</span><div class="coin-sym">${c.s} <span class="coin-rank">#${c.rank}</span></div><div class="coin-price">$${fmt(c.p)}</div><div class="coin-change ${c.c>=0?'up':'down'}">${c.c>=0?'▲ +':'▼ '}${c.c.toFixed(2)}%</div></div>`;
+}
+
+function updateAll(){updatePrices();updatePortfolio();updateFavorites();updateAlerts();updateProfile();updateBadges();updateAchievements()}
+
+function updatePrices(){
+    let q=document.getElementById('searchInput')?.value||'', coins=q?allCoins.filter(c=>c.s.toLowerCase().includes(q.toLowerCase())):allCoins;
+    document.getElementById('gainersGrid').innerHTML=[...coins].sort((a,b)=>b.c-a.c).slice(0,6).map(coinCard).join('');
+    document.getElementById('losersGrid').innerHTML=[...coins].sort((a,b)=>a.c-b.c).slice(0,6).map(coinCard).join('');
+    document.getElementById('popularGrid').innerHTML=[...coins].slice(0,30).map(coinCard).join('');
+}
+
+function updatePortfolio(){
+    let list=document.getElementById('pfList'), val=document.getElementById('pfValue'), pnl=document.getElementById('pfPnl');
+    if(portfolio.length===0){list.innerHTML=`<div class="empty"><div class="empty-icon">💼</div><p>${_('pf_empty')}</p></div>`;val.textContent='$0.00';pnl.innerHTML='';return}
+    let ti=0,tc=0;
+    list.innerHTML=portfolio.map((item,i)=>{let coin=allCoins.find(c=>c.s===item.symbol),cp=coin?coin.p:0,ch=coin?coin.c:0,inv=item.amount*item.buyPrice,cur=item.amount*cp,p=cur-inv,pp=inv>0?(p/inv)*100:0;ti+=inv;tc+=cur;return`<div class="pf-item"><div style="display:flex;justify-content:space-between"><strong>${item.symbol}</strong><span style="color:var(--red);cursor:pointer" onclick="removePf(${i})">✕</span></div><div style="font-size:10px;color:var(--text2)">${item.amount} × $${fmt(item.buyPrice)} | Сейчас $${fmt(cp)} <span class="${ch>=0?'up':'down'}">${ch>=0?'+':''}${ch.toFixed(2)}%</span></div><div style="font-weight:600;color:${p>=0?'var(--green)':'var(--red)'}">P/L $${p.toFixed(2)} (${pp.toFixed(2)}%)</div></div>`}).join('');
+    let tp=tc-ti; val.textContent='$'+fmt(tc); pnl.innerHTML=`<span style="color:${tp>=0?'var(--green)':'var(--red)'}">P/L $${tp.toFixed(2)} (${ti>0?(tp/ti*100).toFixed(2):0}%)</span>`;
+}
+
+function updateFavorites(){let favs=allCoins.filter(c=>favorites.includes(c.s));document.getElementById('favGrid').innerHTML=favs.length>0?favs.map(coinCard).join(''):'<div class="empty" style="grid-column:1/-1"><div class="empty-icon">⭐</div><p>Избранное пусто</p></div>'}
+function updateAlerts(){let list=document.getElementById('alertList');if(alerts.length===0){list.innerHTML='<div class="empty"><div class="empty-icon">🔔</div><p>Нет алертов</p></div>';return}list.innerHTML=alerts.map((a,i)=>{let coin=allCoins.find(c=>c.s===a.symbol);return`<div class="alert-item" style="display:flex;justify-content:space-between"><div><strong>${a.symbol}</strong> <span style="color:${a.dir==='above'?'var(--green)':'var(--red)'};font-size:10px">${a.dir==='above'?'▲':'▼'} $${fmt(a.price)}</span><div style="font-size:9px;color:var(--text2)">Сейчас ${coin?'$'+fmt(coin.p):'?'}</div></div><span style="color:var(--red);cursor:pointer" onclick="removeAlert(${i})">✕</span></div>`}).join('')}
+
+function updateProfile(){
+    let u=(tg?.initDataUnsafe?.user)||{};
+    document.getElementById('profName').textContent=u.first_name||'Пользователь';
+    document.getElementById('profUsername').textContent=u.username?'@'+u.username:'Аноним';
+    document.getElementById('statPF').textContent=portfolio.length;
+    document.getElementById('statFav').textContent=favorites.length;
+    document.getElementById('statAlert').textContent=alerts.length;
+    document.getElementById('infoName').textContent=u.first_name||'-';
+    document.getElementById('infoVisits').textContent=visits;
+    document.getElementById('infoLang').textContent=currentLang.toUpperCase();
+}
+
+function updateAchievements(){
+    let ach=[{id:'first',name:'Первый вход',icon:'👋',cond:visits>=1},{id:'fav5',name:'Коллекционер',icon:'⭐',cond:favorites.length>=5},{id:'pf3',name:'Инвестор',icon:'💼',cond:portfolio.length>=3},{id:'alert1',name:'Наблюдатель',icon:'🔔',cond:alerts.length>=1},{id:'visit10',name:'Постоянный',icon:'🔄',cond:visits>=10}];
+    document.getElementById('achievementsList').innerHTML=ach.map(a=>`<span class="achievement ${a.cond?'unlocked':'locked'}">${a.icon} ${a.name}${a.cond?' ✓':''}</span>`).join('');
+}
+
+function updateBadges(){document.getElementById('badgePF').textContent=portfolio.length;document.getElementById('badgeFav').textContent=favorites.length;document.getElementById('badgeAlerts').textContent=alerts.length}
+
+// НОВОСТИ
+async function loadNews(){
+    try{
+        let r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=10'), d=await r.json();
+        document.getElementById('newsList').innerHTML=d.Data.map(n=>`<div class="news-item" onclick="window.open('${n.url}','_blank')"><span class="news-source">${n.source}</span><div class="news-title">${n.title}</div><div class="news-desc">${n.body.substring(0,100)}...</div><div class="news-date">🕒 ${new Date(n.published_on*1000).toLocaleDateString()}</div></div>`).join('');
+    }catch(e){document.getElementById('newsList').innerHTML='<div class="empty">Ошибка загрузки</div>'}
+}
+
+// КОНВЕРТЕР
+function convert(){
+    let from=document.getElementById('convFrom').value, to=document.getElementById('convTo').value;
+    let amount=parseFloat(document.getElementById('convAmount').value)||0;
+    let fc=allCoins.find(c=>c.s===from), tc=allCoins.find(c=>c.s===to);
+    let fp=from==='USD'?1:fc?fc.p:0, tp=to==='USD'?1:tc?tc.p:0;
+    document.getElementById('convResult').textContent='= '+(to==='USD'?'$':'')+fmt(tp>0?(amount*fp)/tp:0)+' '+to;
+}
+
+function exportPortfolio(){
+    if(portfolio.length===0){toast(_('pf_empty'));return}
+    let csv='Symbol,Amount,BuyPrice\n'; portfolio.forEach(i=>{csv+=`${i.symbol},${i.amount},${i.buyPrice}\n`});
+    let b=new Blob([csv],{type:'text/csv'}), u=URL.createObjectURL(b), a=document.createElement('a'); a.href=u; a.download='portfolio.csv'; a.click(); toast(_('toast_export'));
+}
+
+// НАВИГАЦИЯ
+function switchTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.getElementById('tab-'+name).classList.add('active');
+    document.querySelectorAll('.nav-btn, .bottom-btn').forEach(b=>b.classList.remove('active','on'));
+    document.querySelectorAll('[data-tab="'+name+'"]').forEach(b=>b.classList.add(b.classList.contains('nav-btn')?'active':'on'));
+    if(name==='news')loadNews();
+    if(name==='converter')convert();
+}
+
+document.querySelectorAll('.nav-btn, .bottom-btn').forEach(btn=>{
+    btn.addEventListener('click', function(){ switchTab(this.dataset.tab); });
+});
+
+// ТЕМА
+function toggleTheme(){
+    darkMode=!darkMode; localStorage.setItem('_dm',JSON.stringify(darkMode));
+    if(darkMode){document.body.classList.add('dark-theme');document.getElementById('themeSwitch').classList.add('on');toast(_('toast_dark_on'))}
+    else{document.body.classList.remove('dark-theme');document.getElementById('themeSwitch').classList.remove('on');toast(_('toast_dark_off'))}
+}
+
+// ЯЗЫК
+function changeLanguage(lang){
+    currentLang=lang; localStorage.setItem('_lang',lang);
+    document.getElementById('searchInput').placeholder=_('search');
+    toast('🌐 '+(lang==='ru'?'Русский':lang.toUpperCase()));
+}
+
+// МОДАЛКА
+function openModal(sym){
+    currentCoin=sym; let c=allCoins.find(x=>x.s===sym); if(!c)return;
+    document.getElementById('modSym').textContent=c.s+' #'+c.rank;
+    document.getElementById('modPrice').textContent='$'+fmt(c.p);
+    document.getElementById('modChange').textContent=(c.c>=0?'+':'')+c.c.toFixed(2)+'%';
+    document.getElementById('modChange').style.color=c.c>=0?'var(--green)':'var(--red)';
+    document.getElementById('modHigh').textContent='$'+fmt(c.h);
+    document.getElementById('modLow').textContent='$'+fmt(c.l);
+    document.getElementById('modVolume').textContent=fmtV(c.q);
+    document.getElementById('modRSI').textContent='...';
+    document.getElementById('coinModal').classList.add('show'); loadChart(sym,'modalChart');
+}
+function closeModal(){document.getElementById('coinModal').classList.remove('show')}
+
+function toggleFav(sym){let i=favorites.indexOf(sym);if(i>=0){favorites.splice(i,1);toast(_('toast_rem'))}else{favorites.push(sym);toast(_('toast_add'))}localStorage.setItem('_fav',JSON.stringify(favorites));updateAll()}
+function toggleFavModal(){toggleFav(currentCoin)}
+
+function addToPortfolio(){let s=prompt('Символ (BTC):');if(!s)return;let a=prompt('Количество:');if(!a||isNaN(a))return;let p=prompt('Цена покупки:');if(!p||isNaN(p))return;portfolio.push({symbol:s.toUpperCase(),amount:parseFloat(a),buyPrice:parseFloat(p)});localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();switchTab('portfolio');toast(_('toast_add'))}
+function addPfFromModal(){let a=prompt('Количество '+currentCoin+':','1');if(!a||isNaN(a))return;let c=allCoins.find(x=>x.s===currentCoin),p=prompt('Цена покупки:',c?fmt(c.p):'');if(!p||isNaN(p))return;portfolio.push({symbol:currentCoin,amount:parseFloat(a),buyPrice:parseFloat(p)});localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();closeModal();toast(_('toast_add'))}
+function removePf(i){portfolio.splice(i,1);localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();toast(_('toast_rem'))}
+function clearPortfolio(){if(portfolio.length&&confirm('Удалить всё?')){portfolio=[];localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();toast(_('toast_clear'))}}
+
+function addAlert(){let s=prompt('Символ:');if(!s)return;let d=confirm('ВЫШЕ? OK=Выше, Отмена=Ниже')?'above':'below';let p=prompt('Целевая цена:');if(!p||isNaN(p))return;alerts.push({symbol:s.toUpperCase(),dir:d,price:parseFloat(p)});localStorage.setItem('_al',JSON.stringify(alerts));updateAll();toast(_('toast_alert'))}
+function addAlertFromModal(){let d=confirm('ВЫШЕ?')?'above':'below';let c=allCoins.find(x=>x.s===currentCoin),p=prompt('Целевая цена:',c?fmt(c.p):'');if(!p||isNaN(p))return;alerts.push({symbol:currentCoin,dir:d,price:parseFloat(p)});localStorage.setItem('_al',JSON.stringify(alerts));updateAll();closeModal();toast(_('toast_alert'))}
+function removeAlert(i){alerts.splice(i,1);localStorage.setItem('_al',JSON.stringify(alerts));updateAll();toast(_('toast_rem'))}
+
+function sendSupport(){
+    let msg=document.getElementById('supportMessage').value.trim();
+    if(!msg){document.getElementById('supportStatus').innerHTML=`<div class="support-status support-error">${_('support_err')}</div>`;return}
+    let tickets=JSON.parse(localStorage.getItem('_tickets')||'[]');
+    tickets.push({name:document.getElementById('supportName').value,message:msg,date:new Date().toISOString()});
+    localStorage.setItem('_tickets',JSON.stringify(tickets));
+    if(tg)tg.sendData(JSON.stringify({action:'support',data:tickets[tickets.length-1]}));
+    document.getElementById('supportName').value='';document.getElementById('supportMessage').value='';
+    document.getElementById('supportStatus').innerHTML=`<div class="support-status support-success">${_('support_ok')}</div>`;
+    setTimeout(()=>document.getElementById('supportStatus').innerHTML='',3000);
+}
+
+function resetAll(){if(confirm('Сбросить ВСЁ?')){portfolio=[];favorites=[];alerts=[];localStorage.clear();darkMode=false;document.body.classList.remove('dark-theme');updateAll();toast(_('toast_reset'))}}
+
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),2000)}
+
+// Проверка алертов
+setInterval(()=>{alerts.forEach((a,i)=>{let c=allCoins.find(x=>x.s===a.symbol);if(!c)return;if((a.dir==='above'&&c.p>=a.price)||(a.dir==='below'&&c.p<=a.price)){alerts.splice(i,1);localStorage.setItem('_al',JSON.stringify(alerts));updateAll();alert('🚨 '+a.symbol+' = $'+fmt(c.p))}})},15000);
+
+// ЗАПУСК
+loadData(); setInterval(loadData,30000);
+</script>
+</body>
+  </html>
