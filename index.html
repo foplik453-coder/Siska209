@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Crypto Tracker</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            background: #f5f5f5; color: #222; font-family: Arial, sans-serif;
+            font-size: 13px; padding-bottom: 60px;
+        }
+        .header {
+            background: #fff; padding: 10px 14px; position: sticky; top: 0; z-index: 10;
+            border-bottom: 1px solid #ddd; display: flex; align-items: center; gap: 8px;
+        }
+        .header span { font-size: 20px; }
+        .header h1 { font-size: 15px; font-weight: 700; }
+
+        /* НАВИГАЦИЯ - КОМПАКТНАЯ */
+        .nav {
+            display: flex; gap: 4px; padding: 6px 8px; background: #fff;
+            position: sticky; top: 48px; z-index: 9; overflow-x: auto;
+            border-bottom: 1px solid #eee;
+        }
+        .nav-btn {
+            padding: 5px 10px; border: 1px solid #ccc; background: #fff;
+            color: #666; font-size: 10px; cursor: pointer; white-space: nowrap;
+            border-radius: 14px; flex-shrink: 0; font-weight: 500;
+        }
+        .nav-btn.active {
+            background: #222; color: #fff; border-color: #222; font-weight: 600;
+        }
+        .nav-badge { font-size: 9px; }
+
+        .container { padding: 8px; max-width: 500px; margin: 0 auto; }
+        .tab { display: none; }
+        .tab.active { display: block; }
+
+        .search {
+            width: 100%; padding: 7px 10px; border: 1px solid #ddd; border-radius: 8px;
+            font-size: 11px; outline: none; margin: 4px 0 8px; background: #fff;
+        }
+        .section-title { font-size: 11px; font-weight: 700; margin: 10px 0 5px; color: #555; }
+
+        .coin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
+        .coin-card {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 10px; cursor: pointer; position: relative;
+        }
+        .coin-card:active { border-color: #222; }
+        .coin-sym { font-size: 12px; font-weight: 700; }
+        .coin-price { font-size: 13px; font-weight: 700; margin: 2px 0; }
+        .coin-change { font-size: 10px; font-weight: 600; }
+        .up { color: #27ae60; } .down { color: #e74c3c; }
+        .coin-star { position: absolute; top: 6px; right: 8px; font-size: 13px; cursor: pointer; }
+
+        .btn {
+            width: 100%; padding: 8px; border: 1.5px solid #222; background: #fff;
+            color: #222; font-size: 12px; font-weight: 600; cursor: pointer;
+            margin: 3px 0; border-radius: 8px;
+        }
+        .btn:active { background: #222; color: #fff; }
+        .btn-filled { background: #222; color: #fff; }
+
+        .pf-summary {
+            background: #fff; border: 1.5px solid #ddd; border-radius: 10px;
+            padding: 12px; text-align: center; margin-bottom: 8px;
+        }
+        .pf-value { font-size: 24px; font-weight: 700; }
+
+        .pf-item, .alert-item {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 8px 10px; margin-bottom: 4px;
+        }
+
+        .profile-card {
+            background: #fff; border: 1.5px solid #ddd; border-radius: 10px;
+            padding: 14px; text-align: center; margin-bottom: 8px;
+        }
+        .profile-avatar {
+            width: 45px; height: 45px; border-radius: 50%; background: #222;
+            color: #fff; display: flex; align-items: center; justify-content: center;
+            font-size: 20px; margin: 0 auto 8px;
+        }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; }
+        .stat-item {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 8px;
+            padding: 10px; text-align: center;
+        }
+        .stat-value { font-size: 16px; font-weight: 700; }
+        .stat-label { font-size: 8px; color: #888; }
+
+        .settings-section {
+            background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+            padding: 10px; margin-bottom: 6px;
+        }
+        .settings-title { font-size: 12px; font-weight: 700; margin-bottom: 8px; }
+
+        .toggle-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 8px 0; border-bottom: 1px solid #eee;
+        }
+        .switch {
+            width: 36px; height: 20px; background: #ccc; border-radius: 10px;
+            cursor: pointer; position: relative; flex-shrink: 0;
+        }
+        .switch.on { background: #222; }
+        .switch::after {
+            content: ''; position: absolute; width: 14px; height: 14px;
+            background: #fff; border-radius: 50%; top: 3px; left: 3px;
+        }
+        .switch.on::after { left: 19px; }
+
+        select, input, textarea {
+            width: 100%; padding: 6px 8px; border: 1px solid #ddd; border-radius: 6px;
+            font-size: 11px; margin: 3px 0; background: #fff;
+        }
+
+        .modal {
+            display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.7); z-index: 100; padding: 12px;
+        }
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+        .modal-box {
+            background: #fff; border-radius: 12px; padding: 14px;
+            width: 100%; max-width: 320px; max-height: 85vh; overflow-y: auto;
+        }
+        .modal-close {
+            float: right; background: #222; color: #fff; border: none;
+            width: 24px; height: 24px; border-radius: 50%; cursor: pointer;
+        }
+
+        .toast {
+            position: fixed; bottom: 75px; left: 50%; transform: translateX(-50%);
+            background: #222; color: #fff; padding: 8px 14px; border-radius: 14px;
+            font-size: 11px; z-index: 200; display: none;
+        }
+        .toast.show { display: block; }
+
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; right: 0; background: #fff;
+            display: flex; border-top: 1px solid #ddd; z-index: 10;
+        }
+        .bottom-nav button {
+            flex: 1; padding: 6px; border: none; background: none;
+            color: #999; font-size: 8px; cursor: pointer;
+        }
+        .bottom-nav button.on { color: #222; }
+        .bottom-nav button span { font-size: 16px; display: block; }
+
+        .empty { text-align: center; padding: 20px; color: #999; font-size: 11px; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <span>📊</span>
+    <h1>Crypto Tracker Pro</h1>
+</div>
+
+<div class="nav" id="navBar">
+    <button class="nav-btn active" data-tab="prices">💰 Цены</button>
+    <button class="nav-btn" data-tab="portfolio">💼 Портфель <span class="nav-badge" id="badgePF">0</span></button>
+    <button class="nav-btn" data-tab="favorites">⭐ Избр <span class="nav-badge" id="badgeFav">0</span></button>
+    <button class="nav-btn" data-tab="alerts">🔔 Алерты <span class="nav-badge" id="badgeAlerts">0</span></button>
+    <button class="nav-btn" data-tab="news">📰 Новости</button>
+    <button class="nav-btn" data-tab="converter">💱 Конвертер</button>
+    <button class="nav-btn" data-tab="profile">👤 Профиль</button>
+</div>
+
+<div class="container">
+    <!-- PRICES -->
+    <div class="tab active" id="tab-prices">
+        <input type="text" class="search" id="searchInput" placeholder="🔍 Поиск..." oninput="updatePrices()">
+        <div class="section-title">📈 Лидеры роста</div>
+        <div class="coin-grid" id="gainersGrid"></div>
+        <div class="section-title">📉 Падение</div>
+        <div class="coin-grid" id="losersGrid"></div>
+        <div class="section-title">🔥 Все монеты</div>
+        <div class="coin-grid" id="popularGrid"></div>
+    </div>
+
+    <!-- PORTFOLIO -->
+    <div class="tab" id="tab-portfolio">
+        <div class="pf-summary">
+            <div style="font-size:9px;color:#888;">ОБЩАЯ СТОИМОСТЬ</div>
+            <div class="pf-value" id="pfValue">$0.00</div>
+            <div id="pfPnl" style="font-size:11px;"></div>
+        </div>
+        <div id="pfList"></div>
+        <button class="btn btn-filled" onclick="addToPortfolio()">+ Добавить</button>
+        <button class="btn" onclick="clearPortfolio()">Очистить</button>
+        <button class="btn" onclick="exportPortfolio()">📥 CSV</button>
+    </div>
+
+    <!-- FAVORITES -->
+    <div class="tab" id="tab-favorites">
+        <div class="coin-grid" id="favGrid"></div>
+    </div>
+
+    <!-- ALERTS -->
+    <div class="tab" id="tab-alerts">
+        <div id="alertList"></div>
+        <button class="btn btn-filled" onclick="addAlert()">+ Новый алерт</button>
+    </div>
+
+    <!-- NEWS -->
+    <div class="tab" id="tab-news">
+        <div class="section-title">📰 Новости</div>
+        <div id="newsList"><div class="empty">Загрузка...</div></div>
+    </div>
+
+    <!-- CONVERTER -->
+    <div class="tab" id="tab-converter">
+        <div class="pf-summary">
+            <div class="section-title" style="margin-top:0;">💱 Конвертер</div>
+            <select id="convFrom" onchange="convert()">
+                <option value="BTC">BTC</option><option value="ETH">ETH</option>
+                <option value="USDT">USDT</option><option value="SOL">SOL</option>
+            </select>
+            <input type="number" id="convAmount" placeholder="Сумма" value="1" oninput="convert()">
+            <div style="text-align:center;padding:4px;">⬇</div>
+            <select id="convTo" onchange="convert()">
+                <option value="USDT">USDT</option><option value="BTC">BTC</option>
+                <option value="USD">USD</option>
+            </select>
+            <div style="font-size:18px;font-weight:700;padding:8px;" id="convResult">= $0.00</div>
+        </div>
+    </div>
+
+    <!-- PROFILE -->
+    <div class="tab" id="tab-profile">
+        <div class="profile-card">
+            <div class="profile-avatar">👤</div>
+            <div class="profile-name" id="profName">Пользователь</div>
+            <div class="profile-username" id="profUsername">@user</div>
+        </div>
+        <div class="stat-grid">
+            <div class="stat-item"><div class="stat-value" id="statPF">0</div><div class="stat-label">Активы</div></div>
+            <div class="stat-item"><div class="stat-value" id="statFav">0</div><div class="stat-label">Избранное</div></div>
+            <div class="stat-item"><div class="stat-value" id="statAlert">0</div><div class="stat-label">Алерты</div></div>
+        </div>
+
+        <div class="settings-section" style="margin-top:8px;">
+            <div class="settings-title">⚙️ Настройки</div>
+            <div class="toggle-row">
+                <span>🌙 Тёмная тема</span>
+                <div class="switch" id="themeSwitch" onclick="toggleTheme()"></div>
+            </div>
+            <div style="padding:8px 0;">
+                <span>🌐 Язык</span>
+                <select id="languageSelect" onchange="changeLanguage(this.value)">
+                    <option value="auto">Авто</option>
+                    <option value="en">English</option>
+                    <option value="ru">Русский</option>
+                    <option value="es">Español</option>
+                    <option value="de">Deutsch</option>
+                    <option value="fr">Français</option>
+                </select>
+            </div>
+        </div>
+
+        <button class="btn" onclick="resetAll()" style="color:#e74c3c;border-color:#e74c3c;">🗑 Сброс</button>
+    </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal" id="coinModal">
+    <div class="modal-box">
+        <button class="modal-close" onclick="closeModal()">✕</button>
+        <div style="font-size:18px;font-weight:700;" id="modSym">BTC</div>
+        <div style="font-size:28px;font-weight:700;margin:6px 0;" id="modPrice">$0.00</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;margin:8px 0;">
+            <div class="stat-item"><div class="stat-label">24ч</div><div class="stat-value" id="modChange">0%</div></div>
+            <div class="stat-item"><div class="stat-label">Макс</div><div class="stat-value" id="modHigh">$0</div></div>
+            <div class="stat-item"><div class="stat-label">Мин</div><div class="stat-value" id="modLow">$0</div></div>
+            <div class="stat-item"><div class="stat-label">Объём</div><div class="stat-value" id="modVolume">$0</div></div>
+        </div>
+        <button class="btn btn-filled" onclick="toggleFavModal()">⭐ Избранное</button>
+        <button class="btn" onclick="addPfFromModal()">+ Портфель</button>
+        <button class="btn" onclick="addAlertFromModal()">+ Алерт</button>
+    </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<div class="bottom-nav" id="bottomNav">
+    <button class="on" data-tab="prices"><span>💰</span>Цены</button>
+    <button data-tab="portfolio"><span>💼</span>Портфель</button>
+    <button data-tab="favorites"><span>⭐</span>Избранное</button>
+    <button data-tab="converter"><span>💱</span>Конвертер</button>
+    <button data-tab="profile"><span>👤</span>Профиль</button>
+</div>
+
+<script>
+// ДАННЫЕ
+let allCoins=[], favorites=JSON.parse(localStorage.getItem('_fav')||'[]'),
+    portfolio=JSON.parse(localStorage.getItem('_pf')||'[]'),
+    alerts=JSON.parse(localStorage.getItem('_al')||'[]'),
+    currentCoin='BTC', darkMode=JSON.parse(localStorage.getItem('_dm')||'false');
+
+if(darkMode){document.body.style.background='#1a1a2e';document.body.style.color='#fff';document.getElementById('themeSwitch').classList.add('on')}
+
+function fmt(p){if(!p)return'0';if(p<0.001)return p.toFixed(6);if(p<1)return p.toFixed(4);if(p<100)return p.toFixed(2);return p.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2})}
+function fmtV(v){if(v>1e9)return'$'+(v/1e9).toFixed(1)+'B';if(v>1e6)return'$'+(v/1e6).toFixed(0)+'M';return'$'+(v/1e3).toFixed(0)+'K'}
+
+async function loadData(){
+    try{
+        let r=await fetch('https://api.binance.com/api/v3/ticker/24hr');
+        let d=await r.json();
+        allCoins=d.filter(i=>i.symbol.endsWith('USDT')).filter(i=>{let s=i.symbol.replace('USDT','');return /^[A-Z0-9]+$/.test(s)&&s.length<=6}).map(i=>({s:i.symbol.replace('USDT',''),p:parseFloat(i.lastPrice),c:parseFloat(i.priceChangePercent),h:parseFloat(i.highPrice),l:parseFloat(i.lowPrice),v:parseFloat(i.volume),q:parseFloat(i.quoteVolume)})).filter(c=>c.p>0.0001&&c.q>100000);
+        allCoins.sort((a,b)=>b.q-a.q);allCoins.forEach((c,i)=>c.rank=i+1);
+        updateAll();
+    }catch(e){}
+}
+
+function coinCard(c){
+    let fav=favorites.includes(c.s);
+    return `<div class="coin-card" onclick="openModal('${c.s}')"><span class="coin-star" onclick="event.stopPropagation();toggleFav('${c.s}')">${fav?'⭐':'☆'}</span><div class="coin-sym">${c.s} <span style="font-size:8px;color:#999;">#${c.rank}</span></div><div class="coin-price">$${fmt(c.p)}</div><div class="coin-change ${c.c>=0?'up':'down'}">${c.c>=0?'▲ +':'▼ '}${c.c.toFixed(2)}%</div></div>`;
+}
+
+function updateAll(){updatePrices();updatePortfolio();updateFavorites();updateAlerts();updateProfile();updateBadges()}
+
+function updatePrices(){
+    let q=document.getElementById('searchInput')?.value||'',coins=q?allCoins.filter(c=>c.s.toLowerCase().includes(q.toLowerCase())):allCoins;
+    document.getElementById('gainersGrid').innerHTML=[...coins].sort((a,b)=>b.c-a.c).slice(0,6).map(coinCard).join('');
+    document.getElementById('losersGrid').innerHTML=[...coins].sort((a,b)=>a.c-b.c).slice(0,6).map(coinCard).join('');
+    document.getElementById('popularGrid').innerHTML=[...coins].slice(0,30).map(coinCard).join('');
+}
+
+function updatePortfolio(){
+    let list=document.getElementById('pfList'),val=document.getElementById('pfValue'),pnl=document.getElementById('pfPnl');
+    if(portfolio.length===0){list.innerHTML='<div class="empty">💼 Портфель пуст</div>';val.textContent='$0.00';pnl.innerHTML='';return}
+    let ti=0,tc=0;
+    list.innerHTML=portfolio.map((item,i)=>{let coin=allCoins.find(c=>c.s===item.symbol),cp=coin?coin.p:0,ch=coin?coin.c:0,inv=item.amount*item.buyPrice,cur=item.amount*cp,p=cur-inv,pp=inv>0?(p/inv)*100:0;ti+=inv;tc+=cur;return`<div class="pf-item"><div style="display:flex;justify-content:space-between"><strong>${item.symbol}</strong><span style="color:#e74c3c;cursor:pointer" onclick="removePf(${i})">✕</span></div><div style="font-size:9px;color:#888">${item.amount} × $${fmt(item.buyPrice)} | Сейчас $${fmt(cp)} <span class="${ch>=0?'up':'down'}">${ch>=0?'+':''}${ch.toFixed(2)}%</span></div><div style="font-weight:600;color:${p>=0?'#27ae60':'#e74c3c'}">P/L $${p.toFixed(2)} (${pp.toFixed(2)}%)</div></div>`}).join('');
+    let tp=tc-ti;val.textContent='$'+fmt(tc);pnl.innerHTML=`<span style="color:${tp>=0?'#27ae60':'#e74c3c'}">P/L $${tp.toFixed(2)} (${ti>0?(tp/ti*100).toFixed(2):0}%)</span>`;
+}
+
+function updateFavorites(){let favs=allCoins.filter(c=>favorites.includes(c.s));document.getElementById('favGrid').innerHTML=favs.length>0?favs.map(coinCard).join(''):'<div class="empty" style="grid-column:1/-1">⭐ Избранное пусто</div>'}
+function updateAlerts(){let list=document.getElementById('alertList');if(alerts.length===0){list.innerHTML='<div class="empty">🔔 Нет алертов</div>';return}list.innerHTML=alerts.map((a,i)=>{let coin=allCoins.find(c=>c.s===a.symbol);return`<div class="alert-item" style="display:flex;justify-content:space-between"><div><strong>${a.symbol}</strong> <span style="color:${a.dir==='above'?'#27ae60':'#e74c3c'};font-size:9px">${a.dir==='above'?'▲':'▼'} $${fmt(a.price)}</span><div style="font-size:8px;color:#888">Сейчас ${coin?'$'+fmt(coin.p):'?'}</div></div><span style="color:#e74c3c;cursor:pointer" onclick="removeAlert(${i})">✕</span></div>`}).join('')}
+
+function updateProfile(){
+    let u=(window.Telegram?.WebApp?.initDataUnsafe?.user)||{};
+    document.getElementById('profName').textContent=u.first_name||'Пользователь';
+    document.getElementById('profUsername').textContent=u.username?'@'+u.username:'Аноним';
+    document.getElementById('statPF').textContent=portfolio.length;
+    document.getElementById('statFav').textContent=favorites.length;
+    document.getElementById('statAlert').textContent=alerts.length;
+}
+function updateBadges(){document.getElementById('badgePF').textContent=portfolio.length;document.getElementById('badgeFav').textContent=favorites.length;document.getElementById('badgeAlerts').textContent=alerts.length}
+
+// НОВОСТИ
+async function loadNews(){
+    try{
+        let r=await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=10');
+        let d=await r.json();
+        document.getElementById('newsList').innerHTML=d.Data.map(n=>`<div class="pf-item" onclick="window.open('${n.url}','_blank')"><strong>${n.source}</strong><div style="font-size:11px;margin:3px 0">${n.title}</div><div style="font-size:9px;color:#888">${new Date(n.published_on*1000).toLocaleDateString()}</div></div>`).join('');
+    }catch(e){document.getElementById('newsList').innerHTML='<div class="empty">Ошибка загрузки</div>'}
+}
+
+// КОНВЕРТЕР
+function convert(){
+    let from=document.getElementById('convFrom').value,to=document.getElementById('convTo').value;
+    let amount=parseFloat(document.getElementById('convAmount').value)||0;
+    let fc=allCoins.find(c=>c.s===from),tc=allCoins.find(c=>c.s===to);
+    let fp=from==='USD'?1:fc?fc.p:0,tp=to==='USD'?1:tc?tc.p:0;
+    document.getElementById('convResult').textContent='= '+(to==='USD'?'$':'')+fmt(tp>0?(amount*fp)/tp:0)+' '+to;
+}
+
+// ЭКСПОРТ
+function exportPortfolio(){
+    if(portfolio.length===0){toast('Портфель пуст');return}
+    let csv='Symbol,Amount,BuyPrice\n';portfolio.forEach(i=>{csv+=`${i.symbol},${i.amount},${i.buyPrice}\n`});
+    let b=new Blob([csv],{type:'text/csv'}),u=URL.createObjectURL(b),a=document.createElement('a');a.href=u;a.download='portfolio.csv';a.click();toast('Скачано!');
+}
+
+// НАВИГАЦИЯ - ИСПРАВЛЕНО
+function switchTab(name){
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    let tabEl=document.getElementById('tab-'+name);
+    if(tabEl)tabEl.classList.add('active');
+    
+    document.querySelectorAll('.nav-btn, .bottom-nav button').forEach(b=>b.classList.remove('active','on'));
+    document.querySelectorAll('[data-tab="'+name+'"]').forEach(b=>{
+        b.classList.add(b.classList.contains('nav-btn')?'active':'on');
+    });
+    
+    if(name==='news')loadNews();
+    if(name==='converter')convert();
+}
+
+// ВЕШАЕМ ОБРАБОТЧИКИ
+document.querySelectorAll('.nav-btn, .bottom-nav button').forEach(btn=>{
+    btn.addEventListener('click', function(){
+        switchTab(this.getAttribute('data-tab'));
+    });
+});
+
+// ТЕМА
+function toggleTheme(){
+    darkMode=!darkMode;localStorage.setItem('_dm',JSON.stringify(darkMode));
+    if(darkMode){document.body.style.background='#1a1a2e';document.body.style.color='#fff';document.getElementById('themeSwitch').classList.add('on');toast('🌙 Тёмная')}
+    else{document.body.style.background='#f5f5f5';document.body.style.color='#222';document.getElementById('themeSwitch').classList.remove('on');toast('☀️ Светлая')}
+}
+
+// ЯЗЫК
+function changeLanguage(lang){
+    toast('🌐 Язык: '+lang);
+}
+
+// МОДАЛКА
+function openModal(sym){
+    currentCoin=sym;let c=allCoins.find(x=>x.s===sym);if(!c)return;
+    document.getElementById('modSym').textContent=c.s+' #'+c.rank;
+    document.getElementById('modPrice').textContent='$'+fmt(c.p);
+    document.getElementById('modChange').textContent=(c.c>=0?'+':'')+c.c.toFixed(2)+'%';
+    document.getElementById('modChange').style.color=c.c>=0?'#27ae60':'#e74c3c';
+    document.getElementById('modHigh').textContent='$'+fmt(c.h);
+    document.getElementById('modLow').textContent='$'+fmt(c.l);
+    document.getElementById('modVolume').textContent=fmtV(c.q);
+    document.getElementById('coinModal').classList.add('show');
+}
+function closeModal(){document.getElementById('coinModal').classList.remove('show')}
+
+function toggleFav(sym){let i=favorites.indexOf(sym);if(i>=0){favorites.splice(i,1);toast('Удалено')}else{favorites.push(sym);toast('Добавлено')}localStorage.setItem('_fav',JSON.stringify(favorites));updateAll()}
+function toggleFavModal(){toggleFav(currentCoin)}
+
+function addToPortfolio(){let s=prompt('Символ (BTC):');if(!s)return;let a=prompt('Количество:');if(!a||isNaN(a))return;let p=prompt('Цена покупки:');if(!p||isNaN(p))return;portfolio.push({symbol:s.toUpperCase(),amount:parseFloat(a),buyPrice:parseFloat(p)});localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();switchTab('portfolio');toast('Добавлено!')}
+function addPfFromModal(){let a=prompt('Количество '+currentCoin+':','1');if(!a||isNaN(a))return;let c=allCoins.find(x=>x.s===currentCoin),p=prompt('Цена покупки:',c?fmt(c.p):'');if(!p||isNaN(p))return;portfolio.push({symbol:currentCoin,amount:parseFloat(a),buyPrice:parseFloat(p)});localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();closeModal();toast('Добавлено!')}
+function removePf(i){portfolio.splice(i,1);localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();toast('Удалено')}
+function clearPortfolio(){if(portfolio.length&&confirm('Удалить всё?')){portfolio=[];localStorage.setItem('_pf',JSON.stringify(portfolio));updateAll();toast('Очищено')}}
+
+function addAlert(){let s=prompt('Символ:');if(!s)return;let d=confirm('ВЫШЕ? OK=Выше, Отмена=Ниже')?'above':'below';let p=prompt('Целевая цена:');if(!p||isNaN(p))return;alerts.push({symbol:s.toUpperCase(),dir:d,price:parseFloat(p)});localStorage.setItem('_al',JSON.stringify(alerts));updateAll();toast('Алерт создан!')}
+function addAlertFromModal(){let d=confirm('ВЫШЕ?')?'above':'below';let c=allCoins.find(x=>x.s===currentCoin),p=prompt('Целевая цена:',c?fmt(c.p):'');if(!p||isNaN(p))return;alerts.push({symbol:currentCoin,dir:d,price:parseFloat(p)});localStorage.setItem('_al',JSON.stringify(alerts));updateAll();closeModal();toast('Алерт создан!')}
+function removeAlert(i){alerts.splice(i,1);localStorage.setItem('_al',JSON.stringify(alerts));updateAll();toast('Удалён')}
+
+function resetAll(){if(confirm('Сбросить ВСЁ?')){portfolio=[];favorites=[];alerts=[];localStorage.clear();updateAll();toast('Сброшено')}}
+
+function toast(msg){let t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window._t);window._t=setTimeout(()=>t.classList.remove('show'),2000)}
+
+// Проверка алертов
+setInterval(()=>{alerts.forEach((a,i)=>{let c=allCoins.find(x=>x.s===a.symbol);if(!c)return;if((a.dir==='above'&&c.p>=a.price)||(a.dir==='below'&&c.p<=a.price)){alerts.splice(i,1);localStorage.setItem('_al',JSON.stringify(alerts));updateAll();alert('🚨 '+a.symbol+' = $'+fmt(c.p))}})},15000);
+
+// ЗАПУСК
+loadData();setInterval(loadData,30000);
+</script>
+</body>
+      </html>
