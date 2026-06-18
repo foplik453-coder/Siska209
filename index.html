@@ -1,0 +1,1993 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://api.binance.com https://min-api.cryptocompare.com https://ipapi.co wss://stream.binance.com https://api.telegram.org; script-src 'self'; style-src 'self' 'unsafe-inline';">
+    <title>Crypto Tracker Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --bg2: #111111;
+            --card-bg: #141414;
+            --card-border: rgba(255,255,255,0.04);
+            --text: #ffffff;
+            --text-secondary: #a0a0a0;
+            --text-tertiary: #606060;
+            --accent: #00d4ff;
+            --accent-glow: rgba(0,212,255,0.3);
+            --green: #00ff88;
+            --red: #ff4757;
+            --gold: #ffc048;
+            --shadow: 0 4px 20px rgba(0,0,0,0.6);
+            --glass: rgba(20,20,20,0.8);
+        }
+
+        .light-theme {
+            --bg: #f5f6f8;
+            --bg2: #ffffff;
+            --card-bg: #ffffff;
+            --card-border: rgba(0,0,0,0.06);
+            --text: #1a1a1a;
+            --text-secondary: #666666;
+            --text-tertiary: #999999;
+            --accent: #6c5ce7;
+            --accent-glow: rgba(108,92,231,0.2);
+            --green: #00b894;
+            --red: #e74c3c;
+            --gold: #f39c12;
+            --shadow: 0 2px 12px rgba(0,0,0,0.06);
+            --glass: rgba(255,255,255,0.8);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+            font-weight: 400;
+            letter-spacing: -0.2px;
+            min-height: 100vh;
+            padding-bottom: 70px;
+            font-size: 14px;
+            -webkit-font-smoothing: antialiased;
+            position: relative;
+            transition: background 0.3s, color 0.3s;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: radial-gradient(ellipse at 50% 0%, var(--accent-glow) 0%, transparent 60%),
+                        radial-gradient(ellipse at 80% 100%, rgba(138,43,226,0.08) 0%, transparent 50%);
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        .header {
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--card-border);
+            padding: 12px 16px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+
+        .header-logo { font-size: 24px; }
+
+        .header h1 {
+            font-size: 16px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p { font-size: 10px; color: var(--text-secondary); letter-spacing: 0.5px; }
+
+        .ws-status, .security-badge {
+            padding: 3px 8px;
+            border-radius: 10px;
+            font-size: 9px;
+            font-weight: 600;
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            color: var(--green);
+            transition: all 0.3s ease;
+        }
+
+        .ws-status {
+            animation: livePulse 2s ease-in-out infinite;
+        }
+
+        .ws-status.disconnected {
+            color: var(--red);
+            border-color: var(--red);
+            animation: none;
+        }
+
+        @keyframes livePulse {
+            0% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 8px 2px rgba(0,255,136,0.2); }
+            100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0,255,136,0.4); }
+        }
+
+        .security-badge { margin-left: auto; }
+
+        .nav {
+            display: flex;
+            gap: 4px;
+            padding: 8px 12px;
+            background: var(--glass);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            position: sticky;
+            top: 56px;
+            z-index: 99;
+            overflow-x: auto;
+            border-bottom: 1px solid var(--card-border);
+            scrollbar-width: none;
+            transition: background 0.3s;
+        }
+
+        .nav::-webkit-scrollbar { display: none; }
+
+        .nav-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.03);
+            color: var(--text-secondary);
+            font-size: 11px;
+            font-weight: 500;
+            cursor: pointer;
+            white-space: nowrap;
+            border-radius: 16px;
+            flex-shrink: 0;
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .nav-btn:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .nav-btn.active {
+            background: linear-gradient(135deg, rgba(0,212,255,0.2), rgba(168,85,247,0.2));
+            border-color: var(--accent);
+            color: var(--accent);
+            box-shadow: 0 0 12px var(--accent-glow);
+        }
+
+        .container { padding: 12px; max-width: 520px; margin: 0 auto; position: relative; z-index: 1; }
+
+        .tab { display: none; }
+        .tab.active { display: block; animation: fadeIn 0.25s ease; }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+
+        .search {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            font-size: 13px;
+            outline: none;
+            margin: 4px 0 10px;
+            background: var(--card-bg);
+            color: var(--text);
+            box-shadow: var(--shadow);
+            transition: all 0.3s;
+        }
+
+        .search:focus {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px var(--accent-glow);
+        }
+
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            margin: 16px 0 8px;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding-left: 8px;
+            border-left: 3px solid;
+            border-image: linear-gradient(to bottom, var(--accent), #a855f7) 1;
+        }
+
+        .coin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+        .coin-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 12px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            position: relative;
+            box-shadow: var(--shadow);
+        }
+
+        .coin-card:hover {
+            border-color: var(--accent);
+            box-shadow: 0 0 15px var(--accent-glow), 0 4px 12px rgba(0,0,0,0.6);
+            transform: translateY(-2px);
+        }
+
+        .coin-sym { font-size: 13px; font-weight: 600; color: var(--text); }
+
+        .coin-rank {
+            font-size: 8px;
+            color: var(--text-tertiary);
+            background: rgba(255,255,255,0.05);
+            padding: 1px 5px;
+            border-radius: 4px;
+            margin-left: 4px;
+        }
+
+        .coin-star {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 14px;
+            cursor: pointer;
+            z-index: 2;
+            filter: drop-shadow(0 0 4px rgba(255,215,0,0.5));
+            transition: transform 0.2s;
+        }
+
+        .coin-star:hover { transform: scale(1.2); }
+
+        .coin-price { font-size: 15px; font-weight: 700; margin: 3px 0; }
+
+        .coin-change { font-size: 10px; font-weight: 600; }
+        .up { color: var(--green); }
+        .down { color: var(--red); }
+
+        .btn {
+            width: 100%;
+            padding: 10px 14px;
+            border: 1px solid var(--accent);
+            background: rgba(0,212,255,0.05);
+            color: var(--accent);
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 4px 0;
+            border-radius: 12px;
+            transition: all 0.25s;
+            text-align: center;
+            user-select: none;
+        }
+
+        .btn:hover {
+            background: rgba(0,212,255,0.15);
+            box-shadow: 0 0 16px var(--accent-glow);
+        }
+
+        .btn:active { transform: scale(0.98); }
+
+        .btn-filled {
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            color: #000;
+            border: none;
+            box-shadow: 0 0 16px var(--accent-glow);
+            font-weight: 700;
+        }
+
+        .btn-filled:hover {
+            background: linear-gradient(135deg, #00b8e6, #9333ea);
+            box-shadow: 0 0 24px rgba(0,212,255,0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn-danger { border-color: var(--red); color: var(--red); }
+        .btn-danger:hover { background: rgba(255,71,87,0.15); box-shadow: 0 0 14px rgba(255,71,87,0.3); }
+
+        .btn-small {
+            width: auto;
+            padding: 5px 10px;
+            font-size: 10px;
+            margin: 2px;
+            display: inline-block;
+        }
+
+        .pf-summary {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 20px;
+            text-align: center;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+            transition: background 0.3s;
+        }
+
+        .pf-summary::after {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0; height: 3px;
+            background: linear-gradient(90deg, var(--green), var(--accent), #a855f7);
+        }
+
+        .pf-label { font-size: 9px; color: var(--text-secondary); letter-spacing: 1px; text-transform: uppercase; }
+        .pf-value { font-size: 34px; font-weight: 800; margin: 6px 0; }
+
+        .pf-item, .alert-item, .trade-item, .note-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 6px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s;
+        }
+
+        .trade-item.buy { border-left: 3px solid var(--green); }
+        .trade-item.sell { border-left: 3px solid var(--red); }
+
+        .profile-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 18px;
+            text-align: center;
+            margin-bottom: 10px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s;
+        }
+
+        .profile-avatar {
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+            margin: 0 auto 10px;
+            box-shadow: 0 0 20px var(--accent-glow);
+        }
+
+        .profile-name { font-size: 18px; font-weight: 700; }
+        .profile-username { color: var(--text-secondary); font-size: 11px; }
+
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
+
+        .stat-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            text-align: center;
+            box-shadow: var(--shadow);
+            transition: background 0.3s;
+        }
+
+        .stat-value { font-size: 20px; font-weight: 700; color: var(--accent); }
+        .stat-label { font-size: 8px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        .settings-section {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 8px;
+            box-shadow: var(--shadow);
+            transition: background 0.3s;
+        }
+
+        .settings-title { font-size: 12px; font-weight: 700; margin-bottom: 10px; display: flex; align-items: center; gap: 6px; }
+
+        .toggle-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .toggle-row:last-child { border-bottom: none; }
+        .toggle-label { font-size: 12px; font-weight: 500; }
+
+        .switch {
+            width: 44px; height: 24px;
+            background: rgba(255,255,255,0.1);
+            border-radius: 12px;
+            cursor: pointer;
+            position: relative;
+            transition: background 0.3s;
+            flex-shrink: 0;
+        }
+
+        .switch.on { background: linear-gradient(135deg, var(--accent), #a855f7); }
+
+        .switch::after {
+            content: '';
+            position: absolute;
+            width: 20px; height: 20px;
+            background: #fff;
+            border-radius: 50%;
+            top: 2px; left: 2px;
+            transition: transform 0.3s;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.4);
+        }
+
+        .switch.on::after { transform: translateX(20px); }
+
+        select, input, textarea {
+            width: 100%;
+            padding: 9px 11px;
+            border: 1px solid var(--card-border);
+            border-radius: 10px;
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 12px;
+            margin: 4px 0;
+            font-family: inherit;
+            box-shadow: var(--shadow);
+            transition: background 0.3s, color 0.3s, border 0.3s;
+        }
+
+        .news-item {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 7px;
+            cursor: pointer;
+            box-shadow: var(--shadow);
+            transition: all 0.2s;
+        }
+
+        .news-item:hover { border-color: var(--accent); }
+
+        .news-source {
+            display: inline-block;
+            padding: 2px 7px;
+            background: rgba(255,255,255,0.05);
+            border-radius: 6px;
+            font-size: 9px;
+            font-weight: 600;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
+        .news-title { font-size: 12px; font-weight: 600; margin-bottom: 3px; }
+        .news-desc { font-size: 10px; color: var(--text-secondary); margin-bottom: 4px; }
+        .news-date { font-size: 9px; color: var(--text-tertiary); }
+
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(6px);
+            z-index: 200;
+            padding: 14px;
+        }
+
+        .modal.show { display: flex; align-items: center; justify-content: center; }
+
+        .modal-box {
+            background: var(--bg);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 16px;
+            width: 100%;
+            max-width: 360px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 0 30px var(--accent-glow);
+        }
+
+        .modal-close {
+            float: right;
+            background: rgba(255,255,255,0.05);
+            color: var(--text-secondary);
+            border: 1px solid var(--card-border);
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .modal-close:hover { background: rgba(255,71,87,0.2); color: var(--red); }
+
+        .bottom-nav {
+            position: fixed;
+            bottom: 0; left: 0; right: 0;
+            background: var(--glass);
+            backdrop-filter: blur(25px);
+            -webkit-backdrop-filter: blur(25px);
+            border-top: 1px solid var(--card-border);
+            display: flex;
+            z-index: 100;
+            box-shadow: 0 -4px 20px rgba(0,0,0,0.6);
+            transition: background 0.3s;
+        }
+
+        .bottom-btn {
+            flex: 1;
+            padding: 8px 4px;
+            border: none;
+            background: none;
+            color: var(--text-tertiary);
+            font-size: 9px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            user-select: none;
+        }
+
+        .bottom-btn.on { color: var(--accent); }
+        .bottom-btn span { font-size: 18px; transition: transform 0.2s; }
+        .bottom-btn.on span { animation: iconPop 0.3s ease; }
+
+        @keyframes iconPop {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 85px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            color: var(--text);
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            z-index: 300;
+            display: none;
+            white-space: nowrap;
+            box-shadow: 0 0 15px rgba(0,0,0,0.6);
+            border: 1px solid var(--card-border);
+        }
+
+        .toast.show {
+            display: block;
+            animation: toastIn 0.3s ease;
+        }
+
+        @keyframes toastIn {
+            from { transform: translateX(-50%) translateY(20px); opacity: 0; }
+            to { transform: translateX(-50%) translateY(0); opacity: 1; }
+        }
+
+        .achievement {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 9px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 500;
+            margin: 2px;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+        }
+
+        .achievement.unlocked {
+            background: linear-gradient(135deg, var(--accent), #a855f7);
+            color: #000;
+            border: none;
+            box-shadow: 0 0 8px var(--accent-glow);
+        }
+
+        .achievement.locked { opacity: 0.45; }
+
+        .category-tag {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 9px;
+            font-weight: 600;
+            cursor: pointer;
+            background: rgba(255,255,255,0.03);
+            border: 1px solid var(--card-border);
+            color: var(--text-secondary);
+            transition: all 0.2s;
+            user-select: none;
+        }
+
+        .category-tag:hover { border-color: var(--accent); color: var(--accent); }
+
+        .analysis-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 600;
+            margin: 2px;
+        }
+
+        .analysis-indicator.bullish { background: rgba(0,255,136,0.15); color: var(--green); }
+        .analysis-indicator.bearish { background: rgba(255,71,87,0.15); color: var(--red); }
+        .analysis-indicator.neutral { background: rgba(255,192,72,0.15); color: var(--gold); }
+
+        .empty { text-align: center; padding: 30px; color: var(--text-tertiary); font-size: 12px; }
+        .empty-icon { font-size: 40px; margin-bottom: 8px; opacity: 0.6; }
+
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--card-border);
+            font-size: 11px;
+        }
+
+        .info-row:last-child { border-bottom: none; }
+        .info-label { color: var(--text-secondary); }
+        .info-value { font-weight: 500; }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid var(--card-border);
+            border-top-color: var(--accent);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .modal-sym { font-size: 18px; font-weight: 700; }
+        .modal-price { font-size: 32px; font-weight: 800; margin: 8px 0; }
+        .modal-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; margin: 10px 0; }
+
+        .modal-stat {
+            background: rgba(255,255,255,0.02);
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .modal-stat-label { font-size: 8px; color: var(--text-secondary); text-transform: uppercase; }
+        .modal-stat-value { font-size: 13px; font-weight: 600; }
+
+        .modal-chart {
+            width: 100%;
+            height: 140px;
+            margin: 8px 0;
+            background: rgba(255,255,255,0.02);
+            border-radius: 10px;
+        }
+
+        .bot-setup-hint {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            margin-top: 6px;
+            background: rgba(255,255,255,0.02);
+            padding: 6px;
+            border-radius: 6px;
+            border-left: 2px solid var(--accent);
+        }
+
+        .support-success { color: var(--green); font-size: 11px; padding: 4px 0; }
+        .support-error { color: var(--red); font-size: 11px; padding: 4px 0; }
+
+        .security-log {
+            font-size: 9px;
+            color: var(--text-tertiary);
+            margin-top: 4px;
+            max-height: 80px;
+            overflow-y: auto;
+            background: rgba(255,255,255,0.02);
+            padding: 6px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <span class="header-logo">📊</span>
+        <div>
+            <h1>Crypto Tracker Pro</h1>
+            <p>Secure • Real-time • Professional</p>
+        </div>
+        <span class="ws-status connected" id="wsStatus">🟢 Live</span>
+        <span class="security-badge">🔒 SECURED</span>
+    </div>
+
+    <div class="nav" id="topNav">
+        <button class="nav-btn active" data-tab="prices">💰 Цены</button>
+        <button class="nav-btn" data-tab="portfolio">💼 Портфель</button>
+        <button class="nav-btn" data-tab="favorites">⭐ Избр</button>
+        <button class="nav-btn" data-tab="alerts">🔔 Алерты</button>
+        <button class="nav-btn" data-tab="trading">📈 Трейдинг</button>
+        <button class="nav-btn" data-tab="tools">🛠 Инструменты</button>
+        <button class="nav-btn" data-tab="news">📰 Новости</button>
+        <button class="nav-btn" data-tab="converter">💱 Конвертер</button>
+        <button class="nav-btn" data-tab="profile">👤 Профиль</button>
+    </div>
+
+    <div class="container" id="mainContainer">
+        <div class="tab active" id="tab-prices">
+            <input type="text" class="search" id="searchInput" placeholder="🔍 Поиск криптовалюты..." autocomplete="off">
+            <div class="category-tags" id="categoryTags"></div>
+            <div class="section-title">📈 Лидеры роста</div><div class="coin-grid" id="gainersGrid"></div>
+            <div class="section-title">📉 Падение</div><div class="coin-grid" id="losersGrid"></div>
+            <div class="section-title">🔥 Популярные</div><div class="coin-grid" id="popularGrid"></div>
+        </div>
+
+        <div class="tab" id="tab-portfolio">
+            <div class="pf-summary">
+                <div class="pf-label">ОБЩАЯ СТОИМОСТЬ</div>
+                <div class="pf-value" id="pfValue">$0.00</div>
+                <div id="pfPnl" style="font-size:12px;font-weight:500;"></div>
+            </div>
+            <div id="pfList"></div>
+            <button class="btn btn-filled" id="btnAddToPortfolio">+ Добавить монету</button>
+            <button class="btn" id="btnClearPortfolio">Очистить всё</button>
+            <button class="btn" id="btnExportPortfolio">📥 Экспорт CSV</button>
+        </div>
+
+        <div class="tab" id="tab-favorites"><div class="coin-grid" id="favGrid"></div></div>
+
+        <div class="tab" id="tab-alerts"><div id="alertList"></div><button class="btn btn-filled" id="btnAddAlert">+ Новый алерт</button></div>
+
+        <div class="tab" id="tab-trading">
+            <div class="pf-summary">
+                <div class="pf-label">БУМАЖНЫЙ ТРЕЙДИНГ</div>
+                <div class="pf-value" id="tradingBalance">$10,000</div>
+                <div id="tradingPnl" style="font-size:12px;font-weight:500;"></div>
+            </div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:10px;">
+                <button class="btn btn-filled" id="btnQuickBuy">📈 Быстрая ПОКУПКА</button>
+                <button class="btn btn-danger" id="btnQuickSell">📉 Быстрая ПРОДАЖА</button>
+            </div>
+            <div id="tradeHistory"></div>
+            <button class="btn btn-danger" id="btnResetTrading">Сбросить трейдинг</button>
+        </div>
+
+        <div class="tab" id="tab-tools">
+            <div class="settings-section">
+                <div class="settings-title">🏷 Поиск по категории</div>
+                <div class="category-tags" id="toolsCategoryTags"></div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">🎯 Калькулятор прибыли</div>
+                <input type="text" id="calcSymbol" placeholder="Символ монеты (BTC)" maxlength="10">
+                <input type="number" id="calcInvest" placeholder="Сумма инвестиции ($)" min="0" step="any">
+                <input type="number" id="calcTarget" placeholder="Целевая цена ($)" min="0" step="any">
+                <button class="btn btn-filled" id="btnCalcProfit">Рассчитать</button>
+                <div id="calcResult" style="margin-top:8px;font-size:11px;"></div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">🏆 Топы</div>
+                <button class="btn btn-small" id="btnTopVolume">📊 По объёму</button>
+                <button class="btn btn-small" id="btnTopChange">📈 По росту</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">📝 Крипто-заметки</div>
+                <input type="text" id="noteSymbol" placeholder="Монета" maxlength="10">
+                <textarea id="noteText" placeholder="Текст заметки..." maxlength="500"></textarea>
+                <button class="btn btn-filled" id="btnAddNote">+ Добавить заметку</button>
+                <button class="btn" id="btnViewNotes">📋 Мои заметки</button>
+                <div id="notesList" style="margin-top:8px;"></div>
+            </div>
+        </div>
+
+        <div class="tab" id="tab-news">
+            <div class="section-title">📰 Крипто-новости</div>
+            <div id="newsList"><div class="empty"><span class="loading-spinner"></span> Загрузка...</div></div>
+        </div>
+
+        <div class="tab" id="tab-converter">
+            <div class="pf-summary">
+                <div class="section-title" style="margin-top:0;">💱 Конвертер</div>
+                <select id="convFrom"><option value="BTC">Bitcoin (BTC)</option><option value="ETH">Ethereum (ETH)</option><option value="USDT">Tether (USDT)</option><option value="BNB">BNB</option><option value="SOL">Solana (SOL)</option><option value="XRP">Ripple (XRP)</option><option value="ADA">Cardano (ADA)</option><option value="DOGE">Dogecoin (DOGE)</option></select>
+                <input type="number" id="convAmount" placeholder="Количество" value="1">
+                <div style="text-align:center;font-size:20px;padding:4px;">⬇</div>
+                <select id="convTo"><option value="USDT">Tether (USDT)</option><option value="BTC">Bitcoin (BTC)</option><option value="ETH">Ethereum (ETH)</option><option value="USD">US Dollar (USD)</option></select>
+                <div style="font-size:20px;font-weight:700;text-align:center;padding:10px;" id="convResult">= $0.00</div>
+            </div>
+        </div>
+
+        <div class="tab" id="tab-profile">
+            <div class="profile-card">
+                <div class="profile-avatar">👤</div>
+                <div class="profile-name" id="profName">Пользователь</div>
+                <div class="profile-username" id="profUsername">@username</div>
+            </div>
+            <div class="stat-grid">
+                <div class="stat-item"><div class="stat-value" id="statPF">0</div><div class="stat-label">Активы</div></div>
+                <div class="stat-item"><div class="stat-value" id="statFav">0</div><div class="stat-label">Избранное</div></div>
+                <div class="stat-item"><div class="stat-value" id="statAlert">0</div><div class="stat-label">Алерты</div></div>
+            </div>
+            <div class="settings-section" style="margin-top:8px;">
+                <div class="settings-title">🏆 Достижения</div><div id="achievementsList"></div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">⚙️ Настройки</div>
+                <div class="toggle-row">
+                    <span class="toggle-label">🌙 Тёмная тема</span>
+                    <div class="switch on" id="themeSwitch"></div>
+                </div>
+                <div class="toggle-row">
+                    <span class="toggle-label">🔔 Уведомления</span>
+                    <div class="switch" id="notifSwitch"></div>
+                </div>
+                <div style="padding:8px 0;">
+                    <span class="toggle-label">🌐 Язык</span>
+                    <select id="languageSelect"><option value="ru">🇷🇺 Русский</option><option value="en">🇬🇧 English</option></select>
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">🤖 Telegram бот для поддержки</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-bottom:6px;">Настройте бота для получения сообщений:</div>
+                <input type="text" id="botToken" placeholder="Токен бота (от @BotFather)" style="font-size:10px;">
+                <input type="text" id="botChatId" placeholder="Chat ID админа" style="font-size:10px;">
+                <div style="display:flex;gap:4px;">
+                    <button class="btn btn-small" id="btnSaveBot">💾 Сохранить</button>
+                    <button class="btn btn-small" id="btnTestBot">📤 Тест</button>
+                </div>
+                <div class="bot-setup-hint">
+                    💡 <b>Как получить данные:</b><br>
+                    1. Напишите <b>@BotFather</b> → /newbot<br>
+                    2. Получите токен бота<br>
+                    3. Напишите боту → /start<br>
+                    4. Перейдите: api.telegram.org/bot<токен>/getUpdates<br>
+                    5. Найдите "chat":{"id":123...}
+                </div>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">📧 Обращение в поддержку</div>
+                <input type="text" id="supportName" placeholder="Ваше имя" maxlength="50">
+                <textarea id="supportMessage" placeholder="Опишите проблему или предложение..." maxlength="1000"></textarea>
+                <div id="supportStatus"></div>
+                <button class="btn btn-filled" id="btnSendSupport">📤 Отправить обращение</button>
+            </div>
+            <div class="settings-section">
+                <div class="settings-title">📋 Информация</div>
+                <div class="info-row"><span class="info-label">Имя</span><span class="info-value" id="infoName">-</span></div>
+                <div class="info-row"><span class="info-label">Страна</span><span class="info-value" id="infoCountry">-</span></div>
+                <div class="info-row"><span class="info-label">Язык</span><span class="info-value" id="infoLang">RU</span></div>
+                <div class="info-row"><span class="info-label">Сессии</span><span class="info-value" id="infoVisits">1</span></div>
+                <div class="info-row"><span class="info-label">Версия</span><span class="info-value">7.0.1-pulse</span></div>
+            </div>
+            <button class="btn btn-danger" id="btnResetAll">🗑 Сбросить все данные</button>
+        </div>
+    </div>
+
+    <div class="modal" id="coinModal">
+        <div class="modal-box">
+            <button class="modal-close" id="modalCloseBtn">✕</button>
+            <div class="modal-sym" id="modSym">BTC</div>
+            <div class="modal-price" id="modPrice">$0.00</div>
+            <div class="modal-chart"><canvas id="modalChart"></canvas></div>
+            <div class="modal-stats">
+                <div class="modal-stat"><div class="modal-stat-label">24ч изм.</div><div class="modal-stat-value" id="modChange">0%</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Максимум</div><div class="modal-stat-value" id="modHigh">$0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Минимум</div><div class="modal-stat-value" id="modLow">$0</div></div>
+                <div class="modal-stat"><div class="modal-stat-label">Объём</div><div class="modal-stat-value" id="modVolume">$0</div></div>
+            </div>
+            <div style="margin:8px 0;padding:8px;background:rgba(255,255,255,0.02);border-radius:8px;">
+                <div style="font-size:9px;color:var(--text-secondary);margin-bottom:4px;">ТЕХНИЧЕСКИЙ АНАЛИЗ</div>
+                <div id="modAnalysis"></div>
+            </div>
+            <button class="btn btn-filled" id="btnModalFav">⭐ Избранное</button>
+            <button class="btn" id="btnModalAddPf">+ Портфель</button>
+            <button class="btn" id="btnModalAddAlert">+ Алерт</button>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <div class="bottom-nav" id="bottomNav">
+        <button class="bottom-btn on" data-tab="prices"><span>💰</span>Цены</button>
+        <button class="bottom-btn" data-tab="portfolio"><span>💼</span>Портфель</button>
+        <button class="bottom-btn" data-tab="trading"><span>📈</span>Трейдинг</button>
+        <button class="bottom-btn" data-tab="tools"><span>🛠</span>Инструменты</button>
+        <button class="bottom-btn" data-tab="profile"><span>👤</span>Профиль</button>
+    </div>
+
+    <script>
+    (function() {
+        "use strict";
+
+        // ========== УТИЛИТЫ ==========
+        function escapeHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str || '';
+            return div.innerHTML;
+        }
+
+        function fmt(p) {
+            if (!p || isNaN(p)) return '0';
+            if (p < 0.0001) return p.toFixed(8);
+            if (p < 0.01) return p.toFixed(6);
+            if (p < 1) return p.toFixed(4);
+            if (p < 100) return p.toFixed(2);
+            return p.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        function fmtV(v) {
+            if (v > 1e12) return '$' + (v / 1e12).toFixed(1) + 'T';
+            if (v > 1e9) return '$' + (v / 1e9).toFixed(1) + 'B';
+            if (v > 1e6) return '$' + (v / 1e6).toFixed(0) + 'M';
+            return '$' + (v / 1e3).toFixed(0) + 'K';
+        }
+
+        function toast(msg) {
+            const t = document.getElementById('toast');
+            if (!t) return;
+            t.textContent = msg;
+            t.classList.add('show');
+            clearTimeout(window._toastTimer);
+            window._toastTimer = setTimeout(function() { t.classList.remove('show'); }, 2000);
+        }
+
+        function safeGet(key, fallback) {
+            try { var val = localStorage.getItem(key); return val ? JSON.parse(val) : fallback; }
+            catch(e) { return fallback; }
+        }
+
+        function safeSet(key, value) {
+            try { localStorage.setItem(key, JSON.stringify(value)); return true; }
+            catch(e) { toast('⚠️ Хранилище переполнено'); return false; }
+        }
+
+        function showDialog(opts) {
+            var title = opts.title || '';
+            var message = opts.message || '';
+            var placeholder = opts.placeholder || '';
+            var type = opts.type || 'text';
+            var onConfirm = opts.onConfirm;
+            var onCancel = opts.onCancel;
+
+            var modal = document.createElement('div');
+            modal.className = 'modal show';
+            modal.innerHTML = '<div class="modal-box">' +
+                '<h3>' + escapeHtml(title) + '</h3>' +
+                (message ? '<p>' + escapeHtml(message) + '</p>' : '') +
+                (type === 'text' ? '<input type="text" id="dialogInput" placeholder="' + escapeHtml(placeholder) + '" class="search">' : '') +
+                '<div style="display:flex;gap:8px;margin-top:12px;">' +
+                '<button class="btn btn-filled" id="dialogOk" style="flex:1;">OK</button>' +
+                '<button class="btn" id="dialogCancel" style="flex:1;">Отмена</button>' +
+                '</div></div>';
+            document.body.appendChild(modal);
+
+            var okBtn = modal.querySelector('#dialogOk');
+            var cancelBtn = modal.querySelector('#dialogCancel');
+            var input = modal.querySelector('#dialogInput');
+
+            function cleanup() { modal.remove(); }
+
+            okBtn.addEventListener('click', function() {
+                cleanup();
+                if (onConfirm) onConfirm(input ? input.value : true);
+            });
+
+            cancelBtn.addEventListener('click', function() {
+                cleanup();
+                if (onCancel) onCancel();
+            });
+
+            modal.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    cleanup();
+                    if (onCancel) onCancel();
+                }
+            });
+        }
+
+        // ========== СОСТОЯНИЕ ==========
+        var allCoins = [];
+        var favorites = safeGet('ct6_fav', []);
+        var portfolio = safeGet('ct6_pf', []);
+        var alerts = safeGet('ct6_al', []);
+        var trades = safeGet('ct6_trades', []);
+        var notes = safeGet('ct6_notes', []);
+        var tradingBalance = parseFloat(safeGet('ct6_balance', '10000'));
+        var currentCoin = 'BTC';
+        var darkMode = safeGet('ct6_dm', true);
+        var currentLang = safeGet('ct6_lang', 'ru');
+        var notificationsEnabled = safeGet('ct6_notif', false);
+        var visits = parseInt(safeGet('ct6_vs', '0'));
+        var ws = null;
+        var priceHistory = {};
+
+        visits++;
+        safeSet('ct6_vs', visits);
+
+        var tg = window.Telegram ? window.Telegram.WebApp : null;
+        if (tg) { tg.expand(); tg.ready(); }
+
+        // ========== ТЕМА ==========
+        function applyTheme() {
+            if (darkMode) {
+                document.body.classList.remove('light-theme');
+                var ts = document.getElementById('themeSwitch');
+                if (ts) ts.classList.add('on');
+            } else {
+                document.body.classList.add('light-theme');
+                var ts = document.getElementById('themeSwitch');
+                if (ts) ts.classList.remove('on');
+            }
+        }
+        applyTheme();
+
+        function toggleTheme() {
+            darkMode = !darkMode;
+            safeSet('ct6_dm', darkMode);
+            applyTheme();
+            toast(darkMode ? '🌙 Тёмная тема' : '☀️ Светлая тема');
+        }
+
+        // ========== КАТЕГОРИИ ==========
+        var cryptoCategories = {
+            'DeFi': ['UNI','AAVE','COMP','MKR','SNX','YFI','SUSHI','CRV','1INCH','LDO'],
+            'NFT': ['MANA','SAND','AXS','ENJ','CHZ','FLOW','THETA','APE','BLUR'],
+            'Layer1': ['SOL','ADA','AVAX','DOT','ATOM','NEAR','FTM','ALGO','EGLD','INJ'],
+            'Layer2': ['MATIC','ARB','OP','IMX','LRC','SKL','METIS'],
+            'Meme': ['DOGE','SHIB','PEPE','FLOKI','BONK','WIF','BOME'],
+            'Exchange': ['BNB','OKB','CRO','KCS','HT','GT','LEO'],
+            'AI': ['FET','AGIX','OCEAN','RNDR','TAO','WLD','AKT'],
+            'Gaming': ['GALA','SAND','MANA','AXS','ILV','YGG','PIXEL','RON'],
+            'Storage': ['FIL','AR','STORJ','SC','HOT'],
+            'Privacy': ['XMR','ZEC','ROSE','SCRT','DASH']
+        };
+
+        function searchByCategory(category) {
+            if (!cryptoCategories[category]) return;
+            var coins = cryptoCategories[category]
+                .map(function(s) { return allCoins.find(function(c) { return c.s === s; }); })
+                .filter(function(c) { return c; })
+                .sort(function(a, b) { return b.q - a.q; });
+            if (coins.length > 0) {
+                document.getElementById('popularGrid').innerHTML = coins.map(coinCard).join('');
+                document.getElementById('gainersGrid').innerHTML = '';
+                document.getElementById('losersGrid').innerHTML = '';
+                switchTab('prices');
+                toast(category + ': ' + coins.length + ' монет');
+            }
+        }
+
+        function renderCategoryTags(containerId) {
+            var container = document.getElementById(containerId);
+            if (!container) return;
+            container.innerHTML = Object.keys(cryptoCategories).map(function(cat) {
+                return '<span class="category-tag" data-category="' + escapeHtml(cat) + '">' + escapeHtml(cat) + '</span>';
+            }).join('');
+        }
+
+        // ========== API ==========
+        function fetchWithRetry(url, retries) {
+            retries = retries || 3;
+            return new Promise(function(resolve, reject) {
+                function attempt(n) {
+                    var controller = new AbortController();
+                    var timeout = setTimeout(function() { controller.abort(); }, 8000);
+                    fetch(url, { signal: controller.signal })
+                        .then(function(response) {
+                            clearTimeout(timeout);
+                            if (!response.ok) throw new Error('HTTP ' + response.status);
+                            return response.json();
+                        })
+                        .then(resolve)
+                        .catch(function(e) {
+                            if (n >= retries) reject(e);
+                            else setTimeout(function() { attempt(n + 1); }, 1000 * n);
+                        });
+                }
+                attempt(1);
+            });
+        }
+
+        function validateCoinPrice(coin) {
+            if (Math.abs(coin.c) < 0.0001 && coin.q < 1000000) return false;
+            if (Math.abs(coin.c) > 80) return false;
+            if (coin.p < 0.0001 && coin.q < 1000000) return false;
+            return true;
+        }
+
+        function loadData() {
+            fetchWithRetry('https://api.binance.com/api/v3/ticker/24hr')
+                .then(function(d) {
+                    allCoins = d
+                        .filter(function(i) { return i.symbol.endsWith('USDT'); })
+                        .filter(function(i) {
+                            var s = i.symbol.replace('USDT', '');
+                            return /^[A-Z0-9]{2,10}$/.test(s) && !s.includes('UP') && !s.includes('DOWN') && !s.includes('BULL') && !s.includes('BEAR') && !s.includes('BUSD');
+                        })
+                        .map(function(i) {
+                            return {
+                                s: i.symbol.replace('USDT', ''),
+                                p: parseFloat(i.lastPrice),
+                                c: parseFloat(i.priceChangePercent),
+                                h: parseFloat(i.highPrice),
+                                l: parseFloat(i.lowPrice),
+                                v: parseFloat(i.volume),
+                                q: parseFloat(i.quoteVolume)
+                            };
+                        })
+                        .filter(function(c) { return c.p > 0 && c.q > 100000; })
+                        .filter(validateCoinPrice);
+                    allCoins.sort(function(a, b) { return b.q - a.q; });
+                    allCoins.forEach(function(c, i) { c.rank = i + 1; });
+                    updateAll();
+                })
+                .catch(function(e) {
+                    console.error('API Error:', e.message);
+                    toast('⚠️ Ошибка загрузки данных');
+                });
+        }
+
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) return;
+            try {
+                ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
+                ws.onopen = function() {
+                    var el = document.getElementById('wsStatus');
+                    if (el) { el.textContent = '🟢 Live'; el.classList.remove('disconnected'); }
+                };
+                ws.onmessage = function(event) {
+                    var data = JSON.parse(event.data);
+                    data.forEach(function(ticker) {
+                        if (!ticker.s.endsWith('USDT')) return;
+                        var symbol = ticker.s.replace('USDT', '');
+                        var coin = allCoins.find(function(c) { return c.s === symbol; });
+                        if (coin && validateCoinPrice({s: symbol, c: parseFloat(ticker.P), p: parseFloat(ticker.c), q: parseFloat(ticker.q)})) {
+                            coin.p = parseFloat(ticker.c);
+                            coin.c = parseFloat(ticker.P);
+                            coin.h = parseFloat(ticker.h);
+                            coin.l = parseFloat(ticker.l);
+                            coin.v = parseFloat(ticker.v);
+                            coin.q = parseFloat(ticker.q);
+                        }
+                    });
+                    if (!window._updateTimeout) {
+                        window._updateTimeout = setTimeout(function() {
+                            updateAll();
+                            window._updateTimeout = null;
+                        }, 500);
+                    }
+                };
+                ws.onclose = function() {
+                    var el = document.getElementById('wsStatus');
+                    if (el) { el.textContent = '🔴 Offline'; el.classList.add('disconnected'); }
+                    setTimeout(connectWebSocket, 5000);
+                };
+            } catch(e) {
+                setTimeout(connectWebSocket, 5000);
+            }
+        }
+
+        function calculateSMA(prices, period) {
+            if (prices.length < period) return null;
+            return prices.slice(-period).reduce(function(s, p) { return s + p; }, 0) / period;
+        }
+
+        function calculateRSI(prices, period) {
+            period = period || 14;
+            if (prices.length < period + 1) return null;
+            var gains = 0, losses = 0;
+            for (var i = prices.length - period; i < prices.length; i++) {
+                var diff = prices[i] - prices[i - 1];
+                if (diff > 0) gains += diff;
+                else losses += Math.abs(diff);
+            }
+            var avgGain = gains / period;
+            var avgLoss = losses / period;
+            if (avgLoss === 0) return 100;
+            return 100 - (100 / (1 + avgGain / avgLoss));
+        }
+
+        function analyzeTrend(symbol) {
+            var history = priceHistory[symbol];
+            if (!history || history.length < 20) return null;
+            var prices = history.map(function(h) { return h.price; });
+            var sma20 = calculateSMA(prices, 20);
+            var sma50 = calculateSMA(prices, 50) || sma20;
+            var rsi = calculateRSI(prices);
+            var currentPrice = prices[prices.length - 1];
+            var trend = 'NEUTRAL', strength = 'MODERATE';
+            if (sma20 > sma50 && currentPrice > sma20) trend = 'BULLISH';
+            else if (sma20 < sma50 && currentPrice < sma20) trend = 'BEARISH';
+            if (rsi !== null) {
+                if (rsi > 70) strength = 'OVERBOUGHT';
+                else if (rsi < 30) strength = 'OVERSOLD';
+            }
+            return {
+                trend: trend, strength: strength,
+                rsi: rsi ? rsi.toFixed(1) : 'N/A',
+                sma20: sma20 ? fmt(sma20) : 'N/A',
+                signal: trend === 'BULLISH' && strength === 'OVERSOLD' ? 'STRONG BUY' :
+                        trend === 'BEARISH' && strength === 'OVERBOUGHT' ? 'STRONG SELL' :
+                        trend === 'BULLISH' ? 'BUY' : trend === 'BEARISH' ? 'SELL' : 'HOLD'
+            };
+        }
+
+        function loadChart(sym, canvasId) {
+            fetchWithRetry('https://api.binance.com/api/v3/klines?symbol=' + sym + 'USDT&interval=1h&limit=48')
+                .then(function(d) {
+                    var prices = d.map(function(k) { return parseFloat(k[4]); });
+                    drawChart(canvasId, prices);
+                    if (!priceHistory[sym]) priceHistory[sym] = [];
+                    prices.forEach(function(price, i) {
+                        priceHistory[sym].push({ price: price, time: Date.now() - (prices.length - i) * 3600000 });
+                    });
+                    var analysis = analyzeTrend(sym);
+                    var ma = document.getElementById('modAnalysis');
+                    if (analysis && ma) {
+                        ma.innerHTML = '<span class="analysis-indicator ' + analysis.trend.toLowerCase() + '">' + analysis.trend + '</span>' +
+                            '<span class="analysis-indicator ' + analysis.strength.toLowerCase() + '">' + analysis.strength + '</span>' +
+                            '<span class="analysis-indicator neutral">RSI: ' + analysis.rsi + '</span>' +
+                            '<div style="margin-top:4px;font-weight:600;color:' + (analysis.signal.includes('BUY') ? 'var(--green)' : analysis.signal.includes('SELL') ? 'var(--red)' : 'var(--text-secondary)') + ';">Сигнал: ' + analysis.signal + '</div>';
+                    }
+                })
+                .catch(function(e) { console.error('Chart error:', e); });
+        }
+
+        function drawChart(canvasId, prices) {
+            var canvas = document.getElementById(canvasId);
+            if (!canvas || prices.length < 2) return;
+            var ctx = canvas.getContext('2d');
+            var parent = canvas.parentElement;
+            if (!parent) return;
+            var w = parent.offsetWidth || 300;
+            var h = parent.offsetHeight || 140;
+            canvas.width = w; canvas.height = h;
+            var min = Math.min.apply(null, prices);
+            var max = Math.max.apply(null, prices);
+            var range = max - min || 1;
+            var up = prices[prices.length - 1] >= prices[0];
+            ctx.clearRect(0, 0, w, h);
+            var grad = ctx.createLinearGradient(0, 0, 0, h);
+            grad.addColorStop(0, up ? 'rgba(0,255,136,0.2)' : 'rgba(255,71,87,0.2)');
+            grad.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.beginPath();
+            ctx.strokeStyle = up ? '#00ff88' : '#ff4757';
+            ctx.lineWidth = 2;
+            prices.forEach(function(p, i) {
+                var x = (i / (prices.length - 1)) * w;
+                var y = h - ((p - min) / range) * (h - 15) - 8;
+                if (i === 0) ctx.moveTo(x, y);
+                else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+            ctx.lineTo(w, h); ctx.lineTo(0, h); ctx.closePath();
+            ctx.fillStyle = grad; ctx.fill();
+        }
+
+        function coinCard(c) {
+            var fav = favorites.indexOf(c.s) >= 0;
+            return '<div class="coin-card" data-symbol="' + escapeHtml(c.s) + '">' +
+                '<span class="coin-star" data-action="toggleFav" data-symbol="' + escapeHtml(c.s) + '">' + (fav ? '⭐' : '☆') + '</span>' +
+                '<div class="coin-sym">' + escapeHtml(c.s) + ' <span class="coin-rank">#' + c.rank + '</span></div>' +
+                '<div class="coin-price">$' + escapeHtml(fmt(c.p)) + '</div>' +
+                '<div class="coin-change ' + (c.c >= 0 ? 'up' : 'down') + '">' + (c.c >= 0 ? '▲ +' : '▼ ') + escapeHtml(c.c.toFixed(2)) + '%</div>' +
+                '</div>';
+        }
+
+        function updateAll() {
+            updatePrices();
+            updatePortfolio();
+            updateFavorites();
+            updateAlerts();
+            updateProfile();
+            updateAchievements();
+            updateTrading();
+            updateNotesList();
+            renderCategoryTags('categoryTags');
+            renderCategoryTags('toolsCategoryTags');
+        }
+
+        function updatePrices() {
+            var q = (document.getElementById('searchInput') && document.getElementById('searchInput').value || '').toUpperCase();
+            var coins = q ? allCoins.filter(function(c) { return c.s.indexOf(q) >= 0; }) : allCoins;
+            var gg = document.getElementById('gainersGrid');
+            var lg = document.getElementById('losersGrid');
+            var pg = document.getElementById('popularGrid');
+            if (gg) gg.innerHTML = coins.slice().sort(function(a, b) { return b.c - a.c; }).slice(0, 6).map(coinCard).join('');
+            if (lg) lg.innerHTML = coins.slice().sort(function(a, b) { return a.c - b.c; }).slice(0, 6).map(coinCard).join('');
+            if (pg) pg.innerHTML = coins.slice(0, 30).map(coinCard).join('');
+        }
+
+        function updatePortfolio() {
+            var list = document.getElementById('pfList');
+            var val = document.getElementById('pfValue');
+            var pnl = document.getElementById('pfPnl');
+            if (!list || !val || !pnl) return;
+            if (portfolio.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">💼</div><p>Портфель пуст</p></div>';
+                val.textContent = '$0.00';
+                pnl.innerHTML = '';
+                return;
+            }
+            var ti = 0, tc = 0;
+            list.innerHTML = portfolio.map(function(item, i) {
+                var coin = allCoins.find(function(c) { return c.s === item.symbol; });
+                var cp = coin ? coin.p : 0;
+                var inv = item.amount * item.buyPrice;
+                var cur = item.amount * cp;
+                var p = cur - inv;
+                var pp = inv > 0 ? (p / inv) * 100 : 0;
+                ti += inv;
+                tc += cur;
+                return '<div class="pf-item">' +
+                    '<div style="display:flex;justify-content:space-between;">' +
+                    '<strong>' + escapeHtml(item.symbol) + '</strong>' +
+                    '<span style="color:var(--red);cursor:pointer;" data-action="removePf" data-index="' + i + '">✕</span>' +
+                    '</div>' +
+                    '<div style="font-size:10px;color:var(--text-secondary);">' + item.amount + ' × $' + fmt(item.buyPrice) + ' | Сейчас $' + fmt(cp) + '</div>' +
+                    '<div style="font-weight:600;color:' + (p >= 0 ? 'var(--green)' : 'var(--red)') + ';">P/L $' + p.toFixed(2) + ' (' + pp.toFixed(2) + '%)</div>' +
+                    '</div>';
+            }).join('');
+            var tp = tc - ti;
+            val.textContent = '$' + fmt(tc);
+            pnl.innerHTML = '<span style="color:' + (tp >= 0 ? 'var(--green)' : 'var(--red)') + ';">P/L $' + tp.toFixed(2) + ' (' + (ti > 0 ? (tp / ti * 100).toFixed(2) : 0) + '%)</span>';
+        }
+
+        function updateFavorites() {
+            var favs = allCoins.filter(function(c) { return favorites.indexOf(c.s) >= 0; });
+            var grid = document.getElementById('favGrid');
+            if (grid) grid.innerHTML = favs.length > 0 ? favs.map(coinCard).join('') : '<div class="empty" style="grid-column:1/-1;"><div class="empty-icon">⭐</div><p>Избранное пусто</p></div>';
+        }
+
+        function updateAlerts() {
+            var list = document.getElementById('alertList');
+            if (!list) return;
+            if (alerts.length === 0) {
+                list.innerHTML = '<div class="empty"><div class="empty-icon">🔔</div><p>Нет алертов</p></div>';
+                return;
+            }
+            list.innerHTML = alerts.map(function(a, i) {
+                var coin = allCoins.find(function(c) { return c.s === a.symbol; });
+                return '<div class="alert-item" style="display:flex;justify-content:space-between;">' +
+                    '<div>' +
+                    '<strong>' + escapeHtml(a.symbol) + '</strong> ' +
+                    '<span style="color:' + (a.dir === 'above' ? 'var(--green)' : 'var(--red)') + ';font-size:10px;">' + (a.dir === 'above' ? '▲' : '▼') + ' $' + fmt(a.price) + '</span>' +
+                    '<div style="font-size:9px;color:var(--text-secondary);">Сейчас ' + (coin ? '$' + fmt(coin.p) : '?') + '</div>' +
+                    '</div>' +
+                    '<span style="color:var(--red);cursor:pointer;" data-action="removeAlert" data-index="' + i + '">✕</span>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function updateProfile() {
+            var u = (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) ? tg.initDataUnsafe.user : {};
+            var pn = document.getElementById('profName');
+            var pu = document.getElementById('profUsername');
+            var inn = document.getElementById('infoName');
+            var iv = document.getElementById('infoVisits');
+            var il = document.getElementById('infoLang');
+            if (pn) pn.textContent = u.first_name || 'Пользователь';
+            if (pu) pu.textContent = u.username ? '@' + u.username : 'Аноним';
+            if (inn) inn.textContent = u.first_name || '-';
+            if (iv) iv.textContent = visits;
+            if (il) il.textContent = currentLang.toUpperCase();
+        }
+
+        function updateAchievements() {
+            var ach = [
+                { name: 'Первый вход', icon: '👋', cond: visits >= 1 },
+                { name: 'Коллекционер', icon: '⭐', cond: favorites.length >= 5 },
+                { name: 'Инвестор', icon: '💼', cond: portfolio.length >= 3 },
+                { name: 'Наблюдатель', icon: '🔔', cond: alerts.length >= 1 },
+                { name: 'Постоянный', icon: '🔄', cond: visits >= 10 },
+                { name: 'Трейдер', icon: '📈', cond: trades.length >= 1 },
+                { name: 'Аналитик', icon: '📝', cond: notes.length >= 1 }
+            ];
+            var al = document.getElementById('achievementsList');
+            if (al) al.innerHTML = ach.map(function(a) {
+                return '<span class="achievement ' + (a.cond ? 'unlocked' : 'locked') + '">' + a.icon + ' ' + a.name + (a.cond ? ' ✓' : '') + '</span>';
+            }).join('');
+        }
+
+        function switchTab(name) {
+            document.querySelectorAll('.tab').forEach(function(t) { t.classList.remove('active'); });
+            var tabEl = document.getElementById('tab-' + name);
+            if (tabEl) tabEl.classList.add('active');
+            document.querySelectorAll('.nav-btn, .bottom-btn').forEach(function(b) { b.classList.remove('active', 'on'); });
+            document.querySelectorAll('[data-tab="' + name + '"]').forEach(function(b) {
+                b.classList.add(b.classList.contains('nav-btn') ? 'active' : 'on');
+            });
+            if (name === 'news') loadNews();
+            if (name === 'converter') convert();
+            if (name === 'trading') updateTrading();
+            if (name === 'tools') { updateNotesList(); renderCategoryTags('toolsCategoryTags'); }
+        }
+
+        // ========== ДЕЛЕГИРОВАНИЕ СОБЫТИЙ (исправлено) ==========
+        document.addEventListener('click', function(e) {
+            var target = e.target;
+
+            // Кнопки навигации
+            var navBtn = target.closest('.nav-btn');
+            if (navBtn && navBtn.dataset.tab) {
+                switchTab(navBtn.dataset.tab);
+                return;
+            }
+
+            var bottomBtn = target.closest('.bottom-btn');
+            if (bottomBtn && bottomBtn.dataset.tab) {
+                switchTab(bottomBtn.dataset.tab);
+                return;
+            }
+
+            // Категории
+            var catTag = target.closest('.category-tag');
+            if (catTag && catTag.dataset.category) {
+                searchByCategory(catTag.dataset.category);
+                return;
+            }
+
+            // Переключатель темы
+            if (target.closest('#themeSwitch')) {
+                toggleTheme();
+                return;
+            }
+
+            // Действия
+            var actionEl = target.closest('[data-action]');
+            if (actionEl) {
+                var action = actionEl.dataset.action;
+                var symbol = actionEl.dataset.symbol;
+                var index = actionEl.dataset.index;
+
+                if (action === 'toggleFav' && symbol) {
+                    e.stopPropagation();
+                    toggleFav(symbol);
+                    return;
+                }
+                if (action === 'removePf' && index !== undefined) {
+                    removePf(parseInt(index));
+                    return;
+                }
+                if (action === 'removeAlert' && index !== undefined) {
+                    removeAlert(parseInt(index));
+                    return;
+                }
+                if (action === 'openModal' && symbol) {
+                    openModal(symbol);
+                    return;
+                }
+            }
+
+            // Карточки монет
+            var coinCardEl = target.closest('.coin-card');
+            if (coinCardEl && coinCardEl.dataset.symbol && !target.closest('[data-action]')) {
+                openModal(coinCardEl.dataset.symbol);
+                return;
+            }
+
+            // Новости
+            var newsItem = target.closest('.news-item');
+            if (newsItem && newsItem.dataset.url) {
+                window.open(newsItem.dataset.url, '_blank');
+                return;
+            }
+        });
+
+        function openModal(sym) {
+            currentCoin = sym;
+            var c = allCoins.find(function(x) { return x.s === sym; });
+            if (!c) return;
+            document.getElementById('modSym').textContent = c.s + ' #' + c.rank;
+            document.getElementById('modPrice').textContent = '$' + fmt(c.p);
+            document.getElementById('modChange').textContent = (c.c >= 0 ? '+' : '') + c.c.toFixed(2) + '%';
+            document.getElementById('modChange').style.color = c.c >= 0 ? 'var(--green)' : 'var(--red)';
+            document.getElementById('modHigh').textContent = '$' + fmt(c.h);
+            document.getElementById('modLow').textContent = '$' + fmt(c.l);
+            document.getElementById('modVolume').textContent = fmtV(c.q);
+            var ma = document.getElementById('modAnalysis');
+            if (ma) ma.innerHTML = '<span class="loading-spinner"></span> Анализ...';
+            document.getElementById('coinModal').classList.add('show');
+            loadChart(sym, 'modalChart');
+        }
+
+        function closeModal() {
+            document.getElementById('coinModal').classList.remove('show');
+        }
+
+        function toggleFav(sym) {
+            var i = favorites.indexOf(sym);
+            if (i >= 0) { favorites.splice(i, 1); toast('🗑 Удалено из избранного'); }
+            else { favorites.push(sym); toast('⭐ Добавлено в избранное'); }
+            safeSet('ct6_fav', favorites);
+            updateAll();
+        }
+
+        function addToPortfolio() {
+            showDialog({
+                title: 'Добавить монету',
+                placeholder: 'Символ (BTC)',
+                onConfirm: function(symbol) {
+                    if (!symbol) return;
+                    showDialog({
+                        title: 'Количество',
+                        placeholder: 'Количество',
+                        onConfirm: function(amount) {
+                            if (!amount || isNaN(amount)) return;
+                            showDialog({
+                                title: 'Цена покупки USD',
+                                placeholder: 'Цена',
+                                onConfirm: function(price) {
+                                    if (!price || isNaN(price)) return;
+                                    portfolio.push({ symbol: symbol.toUpperCase(), amount: parseFloat(amount), buyPrice: parseFloat(price), date: new Date().toISOString() });
+                                    safeSet('ct6_pf', portfolio);
+                                    updateAll();
+                                    switchTab('portfolio');
+                                    toast('✅ Добавлено в портфель');
+                                }
+                            });
+                        }
+                    });
+                }
+            });
+        }
+
+        function addPfFromModal() {
+            showDialog({
+                title: 'Количество ' + currentCoin,
+                placeholder: '1',
+                onConfirm: function(amount) {
+                    if (!amount || isNaN(amount)) return;
+                    var c = allCoins.find(function(x) { return x.s === currentCoin; });
+                    showDialog({
+                        title: 'Цена покупки USD',
+                        placeholder: c ? fmt(c.p) : '',
+                        onConfirm: function(price) {
+                            if (!price || isNaN(price)) return;
+                            portfolio.push({ symbol: currentCoin, amount: parseFloat(amount), buyPrice: parseFloat(price), date: new Date().toISOString() });
+                            safeSet('ct6_pf', portfolio);
+                            updateAll();
+                            closeModal();
+                            toast('✅ Добавлено в портфель');
+                        }
+                    });
+                }
+            });
+        }
+
+        function removePf(i) {
+            portfolio.splice(i, 1);
+            safeSet('ct6_pf', portfolio);
+            updateAll();
+            toast('🗑 Удалено');
+        }
+
+        function clearPortfolio() {
+            if (portfolio.length && confirm('Удалить весь портфель?')) {
+                portfolio = [];
+                safeSet('ct6_pf', portfolio);
+                updateAll();
+                toast('Портфель очищен');
+            }
+        }
+
+        function exportPortfolio() {
+            if (portfolio.length === 0) { toast('Портфель пуст'); return; }
+            var csv = 'Symbol,Amount,BuyPrice,Date\n';
+            portfolio.forEach(function(i) { csv += i.symbol + ',' + i.amount + ',' + i.buyPrice + ',' + (i.date || '') + '\n'; });
+            var b = new Blob([csv], { type: 'text/csv' });
+            var u = URL.createObjectURL(b);
+            var a = document.createElement('a');
+            a.href = u; a.download = 'portfolio.csv'; a.click();
+            toast('📥 Скачано!');
+        }
+
+        function addAlert() {
+            showDialog({
+                title: 'Символ монеты',
+                placeholder: 'BTC',
+                onConfirm: function(symbol) {
+                    if (!symbol) return;
+                    var direction = confirm('OK - выше, Отмена - ниже') ? 'above' : 'below';
+                    showDialog({
+                        title: 'Целевая цена USD',
+                        placeholder: '50000',
+                        onConfirm: function(price) {
+                            if (!price || isNaN(price)) return;
+                            alerts.push({ symbol: symbol.toUpperCase(), dir: direction, price: parseFloat(price), date: new Date().toISOString() });
+                            safeSet('ct6_al', alerts);
+                            updateAll();
+                            toast('🔔 Алерт создан');
+                        }
+                    });
+                }
+            });
+        }
+
+        function addAlertFromModal() {
+            var direction = confirm('OK - выше, Отмена - ниже') ? 'above' : 'below';
+            var c = allCoins.find(function(x) { return x.s === currentCoin; });
+            showDialog({
+                title: 'Целевая цена USD',
+                placeholder: c ? fmt(c.p) : '',
+                onConfirm: function(price) {
+                    if (!price || isNaN(price)) return;
+                    alerts.push({ symbol: currentCoin, dir: direction, price: parseFloat(price), date: new Date().toISOString() });
+                    safeSet('ct6_al', alerts);
+                    updateAll();
+                    closeModal();
+                    toast('🔔 Алерт создан');
+                }
+            });
+        }
+
+        function removeAlert(i) {
+            alerts.splice(i, 1);
+            safeSet('ct6_al', alerts);
+            updateAll();
+            toast('🗑 Алерт удалён');
+        }
+
+        function quickTrade(type) {
+            showDialog({
+                title: 'Символ монеты (например BTC)',
+                onConfirm: function(symbol) {
+                    if (!symbol) return;
+                    var coin = allCoins.find(function(c) { return c.s === symbol.toUpperCase(); });
+                    if (!coin) { toast('Монета не найдена'); return; }
+                    showDialog({
+                        title: 'Количество ' + symbol.toUpperCase(),
+                        onConfirm: function(amount) {
+                            if (!amount || amount <= 0) return;
+                            var total = coin.p * amount;
+                            if (type === 'BUY') {
+                                if (total > tradingBalance) { toast('Недостаточно средств!'); return; }
+                                tradingBalance -= total;
+                                toast('Куплено ' + amount + ' ' + symbol.toUpperCase() + ' за $' + fmt(total));
+                            } else {
+                                var holdings = calculateHoldings();
+                                if (!holdings[symbol.toUpperCase()] || holdings[symbol.toUpperCase()] < amount) {
+                                    toast('Недостаточно монет для продажи!');
+                                    return;
+                                }
+                                tradingBalance += total;
+                                toast('Продано ' + amount + ' ' + symbol.toUpperCase() + ' за $' + fmt(total));
+                            }
+                            trades.push({ type: type, symbol: symbol.toUpperCase(), amount: amount, price: coin.p, total: total, date: new Date().toISOString() });
+                            safeSet('ct6_trades', trades);
+                            safeSet('ct6_balance', tradingBalance.toString());
+                            updateTrading();
+                        }
+                    });
+                }
+            });
+        }
+
+        function calculateHoldings() {
+            var holdings = {};
+            trades.forEach(function(trade) {
+                if (!holdings[trade.symbol]) holdings[trade.symbol] = 0;
+                if (trade.type === 'BUY') holdings[trade.symbol] += trade.amount;
+                else holdings[trade.symbol] -= trade.amount;
+            });
+            return holdings;
+        }
+
+        function updateTrading() {
+            var holdings = calculateHoldings();
+            var totalValue = tradingBalance;
+            Object.entries(holdings).forEach(function(entry) {
+                var symbol = entry[0], amount = entry[1];
+                if (amount > 0) {
+                    var coin = allCoins.find(function(c) { return c.s === symbol; });
+                    if (coin) totalValue += coin.p * amount;
+                }
+            });
+            var initialBalance = 10000;
+            var pnl = totalValue - initialBalance;
+            var pnlPercent = (pnl / initialBalance) * 100;
+            var tb = document.getElementById('tradingBalance');
+            var tp = document.getElementById('tradingPnl');
+            if (tb) tb.textContent = '$' + fmt(totalValue);
+            if (tp) tp.innerHTML = '<span style="color:' + (pnl >= 0 ? 'var(--green)' : 'var(--red)') + ';">P/L $' + pnl.toFixed(2) + ' (' + pnlPercent.toFixed(2) + '%)</span>';
+
+            var positionsHTML = Object.entries(holdings).filter(function(entry) { return entry[1] > 0; }).map(function(entry) {
+                var symbol = entry[0], amount = entry[1];
+                var coin = allCoins.find(function(c) { return c.s === symbol; });
+                var currentValue = coin ? coin.p * amount : 0;
+                return '<div class="trade-item buy"><strong>' + escapeHtml(symbol) + '</strong>: ' + amount + ' <span style="color:var(--text-secondary);">($' + fmt(currentValue) + ')</span></div>';
+            }).join('');
+
+            var recentTrades = trades.slice(-5).reverse();
+            var tradesHTML = recentTrades.map(function(trade) {
+                return '<div class="trade-item ' + (trade.type === 'BUY' ? 'buy' : 'sell') + '">' +
+                    '<strong>' + trade.type + '</strong> ' + trade.amount + ' ' + escapeHtml(trade.symbol) + ' @ $' + fmt(trade.price) +
+                    '<div style="font-size:9px;color:var(--text-secondary);">' + new Date(trade.date).toLocaleString() + '</div>' +
+                    '</div>';
+            }).join('');
+
+            var th = document.getElementById('tradeHistory');
+            if (th) th.innerHTML = (positionsHTML ? '<div class="section-title">📊 ПОЗИЦИИ</div>' + positionsHTML : '') +
+                '<div class="section-title">📋 ПОСЛЕДНИЕ СДЕЛКИ</div>' +
+                (tradesHTML || '<div class="empty">Нет сделок</div>');
+        }
+
+        function resetTrading() {
+            if (confirm('Сбросить весь бумажный трейдинг?')) {
+                trades = [];
+                tradingBalance = 10000;
+                safeSet('ct6_trades', trades);
+                safeSet('ct6_balance', tradingBalance.toString());
+                updateTrading();
+                toast('Трейдинг сброшен');
+            }
+        }
+
+        function addNote() {
+            var coin = (document.getElementById('noteSymbol') && document.getElementById('noteSymbol').value || '').toUpperCase();
+            var text = (document.getElementById('noteText') && document.getElementById('noteText').value || '').trim();
+            if (!coin || !text) return;
+            notes.push({ coin: coin, text: text, date: new Date().toISOString(), price: (allCoins.find(function(c) { return c.s === coin; }) || {}).p || 0 });
+            safeSet('ct6_notes', notes);
+            var ns = document.getElementById('noteSymbol');
+            var nt = document.getElementById('noteText');
+            if (ns) ns.value = '';
+            if (nt) nt.value = '';
+            updateNotesList();
+            toast('✅ Заметка сохранена');
+        }
+
+        function viewNotes() {
+            if (notes.length === 0) { toast('Нет заметок'); return; }
+            var message = '📝 ЗАМЕТКИ:\n\n';
+            notes.slice(-5).reverse().forEach(function(n) {
+                message += '• ' + n.coin + ' (' + new Date(n.date).toLocaleDateString() + ')\n  ' + n.text + '\n\n';
+            });
+            if (tg) tg.showPopup({ title: '📝 Заметки', message: message, buttons: [{type: 'ok'}] });
+            else alert(message);
+        }
+
+        function updateNotesList() {
+            var list = document.getElementById('notesList');
+            if (!list) return;
+            if (notes.length === 0) {
+                list.innerHTML = '<div style="font-size:10px;color:var(--text-tertiary);">Нет заметок</div>';
+                return;
+            }
+            list.innerHTML = notes.slice(-5).reverse().map(function(n) {
+                return '<div class="note-item">' +
+                    '<div style="display:flex;justify-content:space-between;">' +
+                    '<strong>' + escapeHtml(n.coin) + '</strong>' +
+                    '<span style="font-size:9px;color:var(--text-tertiary);">' + new Date(n.date).toLocaleDateString() + '</span>' +
+                    '</div>' +
+                    '<div style="font-size:10px;">' + escapeHtml(n.text) + '</div>' +
+                    '<div style="font-size:9px;color:var(--text-secondary);">Цена: $' + fmt(n.price) + '</div>' +
+                    '</div>';
+            }).join('');
+        }
+
+        function loadNews() {
+            fetchWithRetry('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=12')
+                .then(function(d) {
+                    var nl = document.getElementById('newsList');
+                    if (!nl) return;
+                    nl.innerHTML = d.Data.map(function(n) {
+                        return '<div class="news-item" data-url="' + escapeHtml(n.url) + '">' +
+                            '<span class="news-source">' + escapeHtml(n.source) + '</span>' +
+                            '<div class="news-title">' + escapeHtml(n.title) + '</div>' +
+                            '<div class="news-desc">' + escapeHtml(n.body.substring(0, 120)) + '...</div>' +
+                            '<div class="news-date">🕒 ' + new Date(n.published_on * 1000).toLocaleDateString() + '</div>' +
+                            '</div>';
+                    }).join('');
+                })
+                .catch(function() {
+                    var nl = document.getElementById('newsList');
+                    if (nl) nl.innerHTML = '<div class="empty">Ошибка загрузки</div>';
+                });
+        }
+
+        function convert() {
+            var from = document.getElementById('convFrom') && document.getElementById('convFrom').value;
+            var to = document.getElementById('convTo') && document.getElementById('convTo').value;
+            var amount = parseFloat((document.getElementById('convAmount') && document.getElementById('convAmount').value) || 0);
+            var fc = allCoins.find(function(c) { return c.s === from; });
+            var tc = allCoins.find(function(c) { return c.s === to; });
+            var fp = from === 'USD' ? 1 : fc ? fc.p : 0;
+            var tp = to === 'USD' ? 1 : tc ? tc.p : 0;
+            var result = tp > 0 ? (amount * fp) / tp : 0;
+            var cr = document.getElementById('convResult');
+            if (cr) cr.textContent = '= ' + (to === 'USD' ? '$' : '') + fmt(result) + ' ' + to;
+        }
+
+        function calculateFutureProfit() {
+            var symbol = (document.getElementById('calcSymbol') && document.getElementById('calcSymbol').value || '').toUpperCase();
+            var coin = allCoins.find(function(c) { return c.s === symbol; });
+            if (!coin) { toast('Монета не найдена'); return; }
+            var investment = parseFloat((document.getElementById('calcInvest') && document.getElementById('calcInvest').value) || 0);
+            var targetPrice = parseFloat((document.getElementById('calcTarget') && document.getElementById('calcTarget').value) || 0);
+            if (!investment || !targetPrice) return;
+            var coins = investment / coin.p;
+            var futureValue = coins * targetPrice;
+            var profit = futureValue - investment;
+            var roi = (profit / investment) * 100;
+            var cr = document.getElementById('calcResult');
+            if (cr) cr.innerHTML = '<div style="background:rgba(255,255,255,0.02);padding:8px;border-radius:8px;font-size:11px;">' +
+                '<div>💰 Инвестиция: <strong>$' + fmt(investment) + '</strong></div>' +
+                '<div>🪙 Монет: <strong>' + coins.toFixed(6) + ' ' + escapeHtml(symbol) + '</strong></div>' +
+                '<div>🎯 При цене $' + fmt(targetPrice) + ':</div>' +
+                '<div>💵 Стоимость: <strong>$' + fmt(futureValue) + '</strong></div>' +
+                '<div style="color:' + (profit >= 0 ? 'var(--green)' : 'var(--red)') + ';">📈 Прибыль: <strong>$' + fmt(profit) + ' (' + roi.toFixed(1) + '%)</strong></div>' +
+                '</div>';
+        }
+
+        function showTopBy(name, filter) {
+            var sorted = allCoins.slice().sort(filter).slice(0, 10);
+            var message = '🏆 ТОП-10: ' + name + '\n\n';
+            sorted.forEach(function(c, i) { message += (i + 1) + '. ' + c.s + '  $' + fmt(c.p) + '\n'; });
+            if (tg) tg.showPopup({ title: '🏆 ' + name, message: message, buttons: [{type: 'ok'}] });
+            else alert(message);
+        }
+
+        function resetAll() {
+            if (confirm('Сбросить ВСЕ данные? Это действие необратимо!')) {
+                portfolio = []; favorites = []; alerts = []; trades = []; notes = [];
+                tradingBalance = 10000;
+                localStorage.clear();
+                updateAll();
+                toast('🔄 Все данные сброшены');
+            }
+        }
+
+        // ========== ПРЯМЫЕ ОБРАБОТЧИКИ КНОПОК ==========
+        function bindClick(id, handler) {
+            var el = document.getElementById(id);
+            if (el) el.addEventListener('click', handler);
+        }
+
+        bindClick('btnAddToPortfolio', addToPortfolio);
+        bindClick('btnClearPortfolio', clearPortfolio);
+        bindClick('btnExportPortfolio', exportPortfolio);
+        bindClick('btnAddAlert', addAlert);
+        bindClick('btnQuickBuy', function() { quickTrade('BUY'); });
+        bindClick('btnQuickSell', function() { quickTrade('SELL'); });
+        bindClick('btnResetTrading', resetTrading);
+        bindClick('btnAddNote', addNote);
+        bindClick('btnViewNotes', viewNotes);
+        bindClick('btnCalcProfit', calculateFutureProfit);
+        bindClick('btnTopVolume', function() { showTopBy('Объём торгов', function(a, b) { return b.q - a.q; }); });
+        bindClick('btnTopChange', function() { showTopBy('Рост за 24ч', function(a, b) { return b.c - a.c; }); });
+        bindClick('btnResetAll', resetAll);
+        bindClick('modalCloseBtn', closeModal);
+        bindClick('btnModalFav', function() { toggleFav(currentCoin); });
+        bindClick('btnModalAddPf', addPfFromModal);
+        bindClick('btnModalAddAlert', addAlertFromModal);
+        bindClick('btnSaveBot', function() {
+            var token = document.getElementById('botToken') && document.getElementById('botToken').value.trim();
+            var chatId = document.getElementById('botChatId') && document.getElementById('botChatId').value.trim();
+            if (token && chatId) {
+                localStorage.setItem('ct6_bot_token', token);
+                localStorage.setItem('ct6_bot_chatid', chatId);
+                toast('✅ Бот настроен!');
+            } else {
+                toast('⚠️ Заполните оба поля');
+            }
+        });
+        bindClick('btnSendSupport', function() {
+            var name = document.getElementById('supportName') && document.getElementById('supportName').value.trim();
+            var msg = document.getElementById('supportMessage') && document.getElementById('supportMessage').value.trim();
+            var statusEl = document.getElementById('supportStatus');
+            if (!msg) {
+                if (statusEl) statusEl.innerHTML = '<div class="support-error">⚠️ Введите сообщение</div>';
+                return;
+            }
+            if (statusEl) statusEl.innerHTML = '<div class="support-success">💾 Сохранено локально</div>';
+            setTimeout(function() { if (statusEl) statusEl.innerHTML = ''; }, 4000);
+            toast('📤 Обращение сохранено');
+        });
+
+        // Модалка
+        var coinModal = document.getElementById('coinModal');
+        if (coinModal) {
+            coinModal.addEventListener('click', function(e) {
+                if (e.target === coinModal) closeModal();
+            });
+        }
+
+        // Поиск
+        var searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            var searchTimer;
+            searchInput.addEventListener('input', function() {
+                clearTimeout(searchTimer);
+                searchTimer = setTimeout(updatePrices, 300);
+            });
+        }
+
+        // Конвертер
+        bindClick('convFrom', convert);
+        bindClick('convTo', convert);
+        var convAmount = document.getElementById('convAmount');
+        if (convAmount) convAmount.addEventListener('input', convert);
+
+        // Язык
+        var langSelect = document.getElementById('languageSelect');
+        if (langSelect) {
+            langSelect.addEventListener('change', function() {
+                currentLang = langSelect.value;
+                safeSet('ct6_lang', currentLang);
+                toast('🌐 Язык изменён');
+            });
+        }
+
+        // Алерты
+        setInterval(function() {
+            alerts.forEach(function(a, i) {
+                var c = allCoins.find(function(x) { return x.s === a.symbol; });
+                if (!c) return;
+                if ((a.dir === 'above' && c.p >= a.price) || (a.dir === 'below' && c.p <= a.price)) {
+                    var message = a.symbol + ' достиг $' + fmt(c.p) + '!\nУсловие: ' + (a.dir === 'above' ? '▲ выше' : '▼ ниже') + ' $' + fmt(a.price);
+                    alerts.splice(i, 1);
+                    safeSet('ct6_al', alerts);
+                    updateAll();
+                    if (tg) tg.showPopup({ title: '🚨 Ценовой алерт!', message: message, buttons: [{type: 'ok'}] });
+                    else alert(message);
+                }
+            });
+        }, 15000);
+
+        function detectCountry() {
+            fetchWithRetry('https://ipapi.co/json/')
+                .then(function(d) {
+                    var ic = document.getElementById('infoCountry');
+                    if (ic) ic.textContent = d.country_name || 'Unknown';
+                })
+                .catch(function() {
+                    var ic = document.getElementById('infoCountry');
+                    if (ic) ic.textContent = 'Unknown';
+                });
+        }
+
+        // ЗАПУСК
+        loadData();
+        connectWebSocket();
+        setInterval(loadData, 30000);
+        detectCountry();
+
+        window.addEventListener('error', function(e) {
+            console.error('Global error:', e.message, e.filename, e.lineno);
+            toast('⚠️ Произошла ошибка. Обновите страницу.');
+        });
+
+        window.CryptoAPI = {
+            getPrice: function(symbol) { return (allCoins.find(function(c) { return c.s === symbol; }) || {}).p; },
+            getPortfolio: function() { return portfolio; },
+            getTrades: function() { return trades; },
+            getAnalysis: function(symbol) { return analyzeTrend(symbol); },
+            addAlert: function(symbol, price, direction) {
+                alerts.push({ symbol: symbol, dir: direction, price: price, date: new Date().toISOString() });
+                safeSet('ct6_al', alerts);
+                updateAll();
+            }
+        };
+
+    })();
+    </script>
+</body>
+  </html>
