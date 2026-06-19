@@ -2,633 +2,1892 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Crypto Tracker Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#0a0a0a">
+    <title>Monochrome Store - Telegram Web App</title>
     <style>
         :root {
-            --bg: #0a0a0f; --card: #12121a; --border: rgba(255,255,255,0.06);
-            --text: #ffffff; --sub: #8888aa; --dim: #555577;
-            --accent: #4d7cff; --green: #00d4aa; --red: #ff4466;
-            --gold: #ffaa00; --radius: 16px;
+            --bg: #fafafa;
+            --surface: #ffffff;
+            --surface-hover: #f5f5f5;
+            --text: #0a0a0a;
+            --text-secondary: #6b6b6b;
+            --border: #e5e5e5;
+            --accent: #0a0a0a;
+            --accent-hover: #2a2a2a;
+            --accent-glow: rgba(10,10,10,0.08);
+            --danger: #ef4444;
+            --danger-hover: #dc2626;
+            --success: #10b981;
+            --success-hover: #059669;
+            --warning: #f59e0b;
+            --warning-hover: #d97706;
+            --star: #f59e0b;
+            --star-empty: #d4d4d4;
+            --heart: #ef4444;
+            --heart-empty: #d4d4d4;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --radius-xs: 6px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow: 0 2px 8px rgba(0,0,0,0.06);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.1);
+            --shadow-xl: 0 20px 60px rgba(0,0,0,0.15);
+            --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --transition-slow: 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            --bottom-nav-height: 64px;
+            --notification-bg: #0a0a0a;
+            --notification-text: #ffffff;
+            --modal-backdrop: rgba(0,0,0,0.6);
+            --glass-bg: rgba(255,255,255,0.7);
+            --glass-border: rgba(0,0,0,0.06);
+            --progress-bg: #e5e5e5;
         }
-        .light {
-            --bg: #f0f2f5; --card: #ffffff; --border: rgba(0,0,0,0.08);
-            --text: #1a1a2e; --sub: #666688; --dim: #9999bb;
-            --accent: #4d7cff; --green: #00b894; --red: #e74c3c;
+
+        [data-theme="dark"] {
+            --bg: #09090b;
+            --surface: #18181b;
+            --surface-hover: #27272a;
+            --text: #fafafa;
+            --text-secondary: #a1a1aa;
+            --border: #27272a;
+            --accent: #fafafa;
+            --accent-hover: #e4e4e7;
+            --accent-glow: rgba(250,250,250,0.06);
+            --danger: #f87171;
+            --danger-hover: #ef4444;
+            --success: #34d399;
+            --success-hover: #10b981;
+            --warning: #fbbf24;
+            --warning-hover: #f59e0b;
+            --star: #fbbf24;
+            --star-empty: #52525b;
+            --heart: #f87171;
+            --heart-empty: #52525b;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.3);
+            --shadow: 0 2px 8px rgba(0,0,0,0.4);
+            --shadow-lg: 0 8px 30px rgba(0,0,0,0.5);
+            --shadow-xl: 0 20px 60px rgba(0,0,0,0.6);
+            --notification-bg: #fafafa;
+            --notification-text: #09090b;
+            --modal-backdrop: rgba(0,0,0,0.8);
+            --glass-bg: rgba(24,24,27,0.8);
+            --glass-border: rgba(255,255,255,0.06);
+            --progress-bg: #27272a;
         }
+
         * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            background: var(--bg); color: var(--text);
-            font-family: 'Inter', sans-serif; min-height: 100vh;
-            padding-bottom: 80px; font-size: 14px;
-            transition: background 0.3s, color 0.3s;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Inter', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
+            line-height: 1.5;
+            padding-bottom: calc(var(--bottom-nav-height) + 16px);
+            transition: background var(--transition-slow), color var(--transition-slow);
+            position: relative;
+            overflow-x: hidden;
         }
-        body::before {
-            content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-            background: radial-gradient(ellipse at 30% 0%, rgba(77,124,255,0.08) 0%, transparent 50%),
-                        radial-gradient(ellipse at 70% 100%, rgba(0,212,170,0.05) 0%, transparent 50%);
-            pointer-events: none; z-index: 0;
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+        /* ===== FLYING ITEM ===== */
+        .flying-item {
+            position: fixed;
+            z-index: 999;
+            pointer-events: none;
+            font-size: 32px;
+            transition: all 0.6s cubic-bezier(0.2, 0.8, 0.3, 1);
+            filter: drop-shadow(0 4px 12px rgba(0,0,0,0.3));
         }
+
+        /* ===== HEADER ===== */
         .header {
-            background: rgba(10,10,15,0.85); backdrop-filter: blur(20px);
-            padding: 14px 20px; position: sticky; top: 0; z-index: 100;
-            display: flex; align-items: center; gap: 12px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            background: var(--glass-bg);
+            border-bottom: 1px solid var(--glass-border);
+            padding: 12px 16px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            transition: all var(--transition-slow);
+        }
+
+        .header-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+        }
+
+        .logo {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--text) 0%, var(--text-secondary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .logo:hover { opacity: 0.8; }
+
+        .header-actions { display: flex; align-items: center; gap: 6px; }
+
+        .icon-btn {
+            position: relative;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            color: var(--text);
+            width: 38px;
+            height: 38px;
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+        }
+
+        .icon-btn:hover {
+            background: var(--surface-hover);
+            border-color: var(--text);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow);
+        }
+
+        .badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--danger);
+            color: white;
+            font-size: 9px;
+            font-weight: 700;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 4px;
+            animation: badgePop 0.3s ease;
+        }
+
+        @keyframes badgePop {
+            0% { transform: scale(0); }
+            60% { transform: scale(1.3); }
+            100% { transform: scale(1); }
+        }
+
+        /* ===== SEARCH & FILTERS ===== */
+        .search-container {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 10px 16px;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 200px;
+            padding: 12px 16px 12px 40px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            font-size: 15px;
+            outline: none;
+            transition: all var(--transition);
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='%236b6b6b' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.3-4.3'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: 14px center;
+        }
+
+        .search-input:focus {
+            border-color: var(--text);
+            box-shadow: 0 0 0 4px var(--accent-glow);
+        }
+
+        .filter-btn, .sort-btn {
+            padding: 10px 16px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius);
+            background: var(--surface);
+            color: var(--text);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            white-space: nowrap;
+            transition: all var(--transition);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .filter-btn:hover, .sort-btn:hover { border-color: var(--text); background: var(--surface-hover); }
+        .filter-btn.active, .sort-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+
+        .filters-panel {
+            width: 100%;
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            padding: 8px 0;
+            animation: fadeInUp 0.3s ease;
+        }
+
+        @keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(-8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .filter-chip {
+            padding: 6px 14px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            background: var(--surface);
+            color: var(--text-secondary);
+            transition: all var(--transition);
+        }
+
+        .filter-chip:hover { border-color: var(--text); color: var(--text); }
+        .filter-chip.active { background: var(--text); color: var(--bg); border-color: var(--text); }
+        .filter-chip .count { opacity: 0.6; font-size: 10px; margin-left: 4px; }
+
+        /* ===== TABS ===== */
+        .tabs {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 16px;
+            display: flex;
+            gap: 2px;
+            overflow-x: auto;
+            scrollbar-width: none;
             border-bottom: 1px solid var(--border);
         }
-        .header h1 { font-size: 18px; font-weight: 700; flex: 1; }
-        .ws-badge {
-            display: flex; align-items: center; gap: 6px; padding: 6px 14px;
-            border-radius: 20px; font-size: 11px; font-weight: 600;
-            background: rgba(0,212,170,0.12); color: var(--green);
-            border: 1px solid rgba(0,212,170,0.3);
-            animation: livePulse 2s ease-in-out infinite;
+
+        .tabs::-webkit-scrollbar { display: none; }
+
+        .tab {
+            padding: 10px 14px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--text-secondary);
+            cursor: pointer;
+            border: none;
+            background: none;
+            white-space: nowrap;
+            position: relative;
+            transition: all var(--transition);
         }
-        @keyframes livePulse {
-            0%, 100% { box-shadow: 0 0 0 0 rgba(0,212,170,0.3); }
-            50% { box-shadow: 0 0 16px 2px rgba(0,212,170,0.15); }
+
+        .tab.active { color: var(--text); }
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -1px;
+            left: 8px;
+            right: 8px;
+            height: 2px;
+            background: var(--text);
+            border-radius: 2px;
+            animation: tabSlide 0.3s ease;
         }
-        .nav-scroll {
-            display: flex; gap: 6px; padding: 10px 14px; overflow-x: auto;
-            position: sticky; top: 62px; z-index: 99;
-            background: rgba(10,10,15,0.75); backdrop-filter: blur(15px);
-            border-bottom: 1px solid var(--border);
+
+        @keyframes tabSlide { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+        /* ===== BOTTOM NAV ===== */
+        .bottom-nav {
+            display: none;
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: var(--bottom-nav-height);
+            background: var(--glass-bg);
+            border-top: 1px solid var(--glass-border);
+            z-index: 100;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            padding: 4px 8px;
+            padding-bottom: env(safe-area-inset-bottom, 4px);
         }
-        .nav-scroll button {
-            padding: 8px 16px; border-radius: 20px; border: 1px solid var(--border);
-            background: var(--card); color: var(--sub); font-size: 12px;
-            font-weight: 500; cursor: pointer; white-space: nowrap;
-            transition: all 0.2s;
+
+        .bottom-nav-inner {
+            max-width: 960px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            height: 100%;
         }
-        .nav-scroll button:hover { border-color: var(--accent); color: var(--text); }
-        .nav-scroll button.active {
-            background: var(--accent); color: #fff; border-color: var(--accent);
-            box-shadow: 0 4px 16px rgba(77,124,255,0.3);
+
+        .bottom-nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            padding: 4px 8px;
+            cursor: pointer;
+            border: none;
+            background: none;
+            color: var(--text-secondary);
+            transition: all var(--transition);
+            border-radius: var(--radius-sm);
+            -webkit-tap-highlight-color: transparent;
+            font-size: 9px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
         }
-        .main { padding: 16px; max-width: 560px; margin: 0 auto; position: relative; z-index: 1; }
-        .tab { display: none; animation: fadeIn 0.25s ease; }
-        .tab.active { display: block; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        .search {
-            width: 100%; padding: 12px 18px; border: 1px solid var(--border);
-            border-radius: 14px; background: var(--card); color: var(--text);
-            font-size: 13px; margin-bottom: 14px; outline: none;
-            transition: border 0.3s;
-        }
-        .search:focus { border-color: var(--accent); }
-        .section-title {
-            font-size: 11px; font-weight: 700; color: var(--sub);
-            text-transform: uppercase; letter-spacing: 0.5px;
-            margin: 18px 0 10px; padding-left: 10px;
-            border-left: 3px solid var(--accent);
-        }
-        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .coin-card {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 14px; cursor: pointer;
-            transition: all 0.2s; position: relative;
-        }
-        .coin-card:hover { border-color: var(--accent); transform: translateY(-2px); }
-        .coin-symbol { font-weight: 700; font-size: 13px; }
-        .coin-price { font-size: 16px; font-weight: 700; margin: 4px 0; }
-        .coin-change { font-size: 11px; font-weight: 600; }
-        .green { color: var(--green); } .red { color: var(--red); }
-        .btn {
-            display: block; width: 100%; padding: 13px 18px; border-radius: 14px;
-            font-size: 13px; font-weight: 600; cursor: pointer; border: none;
-            transition: all 0.2s; text-align: center; margin: 6px 0;
-        }
-        .btn-primary { background: var(--accent); color: #fff; box-shadow: 0 4px 16px rgba(77,124,255,0.25); }
-        .btn-primary:hover { box-shadow: 0 6px 24px rgba(77,124,255,0.4); transform: translateY(-1px); }
-        .btn-outline { background: transparent; border: 1.5px solid var(--accent); color: var(--accent); }
-        .btn-outline:hover { background: rgba(77,124,255,0.08); }
-        .btn-danger { background: transparent; border: 1.5px solid var(--red); color: var(--red); }
-        .btn-danger:hover { background: rgba(255,68,102,0.08); }
-        .btn-sm { width: auto; padding: 8px 16px; font-size: 11px; display: inline-block; margin: 3px; }
-        .card {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 16px; margin-bottom: 10px;
-        }
-        .card-header { font-weight: 700; font-size: 13px; margin-bottom: 12px; }
-        .stat-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 12px; }
-        .stat-row:last-child { border: none; }
-        .toggle-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; }
-        .switch {
-            width: 48px; height: 28px; border-radius: 14px; background: rgba(255,255,255,0.15);
-            cursor: pointer; position: relative; transition: 0.3s; flex-shrink: 0;
-        }
-        .switch.on { background: var(--accent); }
-        .switch::after {
-            content: ''; position: absolute; width: 22px; height: 22px; background: #fff;
-            border-radius: 50%; top: 3px; left: 3px; transition: 0.3s;
-        }
-        .switch.on::after { transform: translateX(20px); }
-        .modal-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-            z-index: 200; align-items: center; justify-content: center;
-            backdrop-filter: blur(4px);
-        }
-        .modal-overlay.show { display: flex; }
-        .modal-content {
-            background: var(--card); border: 1px solid var(--border);
-            border-radius: 20px; padding: 20px; width: 90%; max-width: 400px;
-            max-height: 80vh; overflow-y: auto;
-        }
-        .modal-close {
-            float: right; width: 30px; height: 30px; border-radius: 50%;
-            background: rgba(255,255,255,0.08); border: none; color: var(--text);
-            cursor: pointer; font-size: 16px; display: flex; align-items: center;
+
+        .bottom-nav-item.active { color: var(--text); background: var(--accent-glow); }
+        .bottom-nav-icon { font-size: 20px; position: relative; transition: transform var(--transition); }
+        .bottom-nav-item.active .bottom-nav-icon { transform: scale(1.1); }
+        .bottom-nav-badge {
+            position: absolute;
+            top: -4px;
+            right: -10px;
+            background: var(--danger);
+            color: white;
+            font-size: 8px;
+            font-weight: 700;
+            min-width: 16px;
+            height: 16px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
             justify-content: center;
         }
-        .toast {
-            position: fixed; bottom: 90px; left: 50%; transform: translateX(-50%);
-            background: #1a1a2e; color: #fff; padding: 12px 24px; border-radius: 24px;
-            z-index: 300; display: none; font-weight: 500; font-size: 13px;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.5);
+
+        /* ===== MAIN CONTENT ===== */
+        .main-content {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 16px;
+            animation: fadeInUp 0.35s ease;
         }
-        .toast.show { display: block; }
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; right: 0; background: rgba(10,10,15,0.9);
-            backdrop-filter: blur(20px); display: flex; z-index: 100;
-            border-top: 1px solid var(--border); padding: 6px 0;
+
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* ===== STARS ===== */
+        .stars { display: inline-flex; gap: 2px; }
+        .star { color: var(--star); font-size: 16px; }
+        .star.empty { color: var(--star-empty); }
+        .star.interactive { cursor: pointer; transition: transform var(--transition); font-size: 28px; }
+        .star.interactive:hover { transform: scale(1.2); }
+
+        .rating-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 2px 8px;
+            border-radius: 100px;
+            font-size: 11px;
+            font-weight: 600;
+            background: var(--warning);
+            color: #000;
         }
-        .bottom-nav button {
-            flex: 1; padding: 8px; background: none; border: none;
-            color: var(--dim); font-size: 10px; font-weight: 500;
-            cursor: pointer; display: flex; flex-direction: column;
-            align-items: center; gap: 4px; transition: 0.2s;
+
+        /* ===== FAVORITE BUTTON (внутри карточки, сверху-справа) ===== */
+        .favorite-btn {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            z-index: 10;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+            color: var(--heart-empty);
         }
-        .bottom-nav button span { font-size: 20px; }
-        .bottom-nav button.on { color: var(--accent); }
-        .chart-container { width: 100%; height: 160px; margin: 12px 0; border-radius: 12px; background: rgba(255,255,255,0.02); }
-        input, select {
-            width: 100%; padding: 12px; border: 1px solid var(--border);
-            border-radius: 12px; background: var(--card); color: var(--text);
-            font-size: 13px; margin: 6px 0; font-family: inherit;
+
+        .favorite-btn.active {
+            color: var(--heart);
+            border-color: var(--heart);
+            animation: heartBeat 0.4s ease;
         }
-        .tag {
-            display: inline-block; padding: 6px 12px; border-radius: 12px;
-            font-size: 10px; font-weight: 600; cursor: pointer;
-            background: rgba(255,255,255,0.04); border: 1px solid var(--border);
-            color: var(--sub); margin: 2px; transition: 0.2s;
+
+        .favorite-btn:hover { transform: scale(1.15); border-color: var(--heart); }
+
+        @keyframes heartBeat {
+            0% { transform: scale(1); }
+            30% { transform: scale(1.3); }
+            60% { transform: scale(0.9); }
+            100% { transform: scale(1); }
         }
-        .tag:hover { border-color: var(--accent); color: var(--accent); }
-        .loading { text-align: center; padding: 30px; color: var(--dim); }
-        .spinner {
-            width: 24px; height: 24px; border: 3px solid var(--border);
-            border-top-color: var(--accent); border-radius: 50%;
-            animation: spin 0.8s linear infinite; margin: 0 auto 10px;
+
+        /* ===== REVIEWS ===== */
+        .review-card {
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-sm);
+            padding: 12px 14px;
+            margin-bottom: 8px;
         }
-        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .review-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+
+        .review-author { font-size: 13px; font-weight: 600; }
+        .review-date { font-size: 10px; color: var(--text-secondary); }
+        .review-text { font-size: 13px; color: var(--text-secondary); line-height: 1.5; }
+        .review-form { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border); }
+
+        /* ===== PROFILE ===== */
+        .profile-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 24px;
+            text-align: center;
+            margin-bottom: 14px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .avatar-wrapper { position: relative; width: 80px; height: 80px; margin: 0 auto 14px; cursor: pointer; }
+
+        .avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--text), var(--text-secondary));
+            color: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 30px;
+            font-weight: 700;
+            overflow: hidden;
+            border: 3px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+        .avatar-edit-badge {
+            position: absolute;
+            bottom: -2px;
+            right: -2px;
+            width: 26px;
+            height: 26px;
+            background: var(--text);
+            color: var(--bg);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            border: 3px solid var(--bg);
+            box-shadow: var(--shadow);
+        }
+
+        .owner-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, var(--warning), #f59e0b);
+            color: #000;
+            padding: 3px 12px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            margin-bottom: 10px;
+        }
+
+        .profile-name { font-size: 22px; font-weight: 700; margin-bottom: 2px; }
+        .profile-email { color: var(--text-secondary); font-size: 14px; margin-bottom: 14px; }
+
+        .profile-stats {
+            display: flex;
+            justify-content: center;
+            gap: 28px;
+            margin-bottom: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            text-align: center;
+            padding: 8px 16px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            transition: all var(--transition);
+        }
+
+        .stat:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+        .stat-value { font-size: 22px; font-weight: 700; }
+        .stat-label { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+
+        /* ===== DASHBOARD ===== */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .dashboard-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 20px;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+        }
+
+        .dashboard-card:hover { box-shadow: var(--shadow); transform: translateY(-2px); }
+
+        .dashboard-value {
+            font-size: 32px;
+            font-weight: 700;
+            margin-bottom: 4px;
+            background: linear-gradient(135deg, var(--text), var(--text-secondary));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .dashboard-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .dashboard-icon { font-size: 28px; margin-bottom: 8px; }
+
+        /* ===== PROGRESS BAR ===== */
+        .order-progress {
+            margin: 14px 0;
+        }
+
+        .progress-steps {
+            display: flex;
+            justify-content: space-between;
+            position: relative;
+            margin-bottom: 8px;
+        }
+
+        .progress-steps::before {
+            content: '';
+            position: absolute;
+            top: 16px;
+            left: 8px;
+            right: 8px;
+            height: 3px;
+            background: var(--progress-bg);
+            border-radius: 2px;
+            z-index: 0;
+        }
+
+        .progress-fill {
+            position: absolute;
+            top: 16px;
+            left: 8px;
+            height: 3px;
+            background: var(--success);
+            border-radius: 2px;
+            z-index: 1;
+            transition: width 0.6s ease;
+        }
+
+        .progress-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            z-index: 2;
+            position: relative;
+        }
+
+        .progress-dot {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--progress-bg);
+            border: 3px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            transition: all 0.4s ease;
+        }
+
+        .progress-step.completed .progress-dot {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+
+        .progress-step.current .progress-dot {
+            background: var(--warning);
+            border-color: var(--warning);
+            color: #000;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
+            50% { box-shadow: 0 0 0 10px rgba(245, 158, 11, 0); }
+        }
+
+        .progress-label {
+            font-size: 9px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            color: var(--text-secondary);
+            text-align: center;
+            max-width: 60px;
+            font-weight: 600;
+        }
+
+        .progress-step.completed .progress-label { color: var(--success); }
+        .progress-step.current .progress-label { color: var(--warning); }
+
+        .status-menu {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--border);
+        }
+
+        .status-btn {
+            padding: 6px 12px;
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 600;
+            text-transform: uppercase;
+            cursor: pointer;
+            background: var(--bg);
+            color: var(--text);
+            transition: all var(--transition);
+        }
+
+        .status-btn:hover { border-color: var(--text); }
+        .status-btn.active { background: var(--text); color: var(--bg); }
+
+        /* ===== SETTINGS ===== */
+        .settings-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .settings-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 14px 0;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .settings-row:last-child { border-bottom: none; }
+        .settings-label { font-size: 14px; font-weight: 600; }
+        .settings-desc { font-size: 11px; color: var(--text-secondary); margin-top: 2px; }
+
+        .toggle { position: relative; width: 50px; height: 28px; cursor: pointer; flex-shrink: 0; }
+        .toggle input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--border);
+            border-radius: 28px;
+            transition: all var(--transition);
+        }
+
+        .toggle-slider:before {
+            content: '';
+            position: absolute;
+            height: 22px;
+            width: 22px;
+            left: 3px;
+            bottom: 3px;
+            background: white;
+            border-radius: 50%;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .toggle input:checked + .toggle-slider { background: var(--text); }
+        .toggle input:checked + .toggle-slider:before { transform: translateX(22px); }
+
+        .theme-options { display: flex; gap: 8px; flex-wrap: wrap; }
+        .theme-option {
+            padding: 10px 18px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 600;
+            background: var(--surface);
+            color: var(--text);
+            transition: all var(--transition);
+        }
+
+        .theme-option.active { background: var(--text); color: var(--bg); border-color: var(--text); box-shadow: var(--shadow); }
+        .theme-option:hover:not(.active) { border-color: var(--text); transform: translateY(-1px); }
+
+        /* ===== PRODUCTS ===== */
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 14px;
+        }
+
+        .product-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            overflow: hidden;
+            cursor: pointer;
+            transition: all var(--transition);
+            position: relative;
+        }
+
+        .product-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); border-color: var(--text); }
+
+        .product-image {
+            width: 100%;
+            aspect-ratio: 1;
+            background: var(--bg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 44px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .product-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.5s ease;
+        }
+
+        .product-card:hover .product-image img { transform: scale(1.05); }
+
+        .product-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            background: var(--text);
+            color: var(--bg);
+            padding: 3px 10px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+        }
+
+        .product-rating-badge {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+        }
+
+        .product-actions {
+            position: absolute;
+            bottom: 8px;
+            right: 8px;
+            display: flex;
+            gap: 4px;
+            opacity: 0;
+            transition: all var(--transition);
+        }
+
+        .product-card:hover .product-actions { opacity: 1; }
+
+        .product-action-btn {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--surface);
+            color: var(--text);
+            border: 1px solid var(--border);
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .product-action-btn:hover { background: var(--text); color: var(--bg); transform: scale(1.1); }
+        .product-action-btn.danger:hover { background: var(--danger); border-color: var(--danger); color: white; }
+
+        .product-info { padding: 14px; }
+        .product-name { font-size: 15px; font-weight: 600; margin-bottom: 4px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-description { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        .product-price { font-size: 17px; font-weight: 700; margin-bottom: 8px; }
+        .product-dop { font-size: 10px; color: var(--text-secondary); margin-bottom: 8px; padding: 4px 10px; background: var(--bg); border-radius: var(--radius-xs); display: inline-block; }
+
+        .btn {
+            width: 100%;
+            padding: 10px 18px;
+            border: 2px solid var(--text);
+            background: var(--text);
+            color: var(--bg);
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all var(--transition);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .btn:hover::after { transform: translateX(100%); }
+        .btn:hover { transform: translateY(-2px); box-shadow: var(--shadow); }
+        .btn:active { transform: translateY(0); }
+        .btn-outline { background: transparent; color: var(--text); }
+        .btn-outline:hover { background: var(--text); color: var(--bg); }
+        .btn-sm { width: auto; padding: 6px 14px; font-size: 11px; }
+        .btn-danger { background: var(--danger); border-color: var(--danger); color: white; }
+        .btn-danger:hover { background: var(--danger-hover); }
+        .btn-success { background: var(--success); border-color: var(--success); color: white; }
+
+        /* ===== FORMS ===== */
+        .form-group { margin-bottom: 16px; }
+        .form-label { display: block; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; color: var(--text-secondary); margin-bottom: 6px; }
+        .form-input, .form-textarea {
+            width: 100%;
+            padding: 12px 14px;
+            border: 2px solid var(--border);
+            border-radius: var(--radius-sm);
+            background: var(--bg);
+            color: var(--text);
+            font-size: 14px;
+            font-family: inherit;
+            outline: none;
+            transition: all var(--transition);
+        }
+
+        .form-input:focus, .form-textarea:focus { border-color: var(--text); box-shadow: 0 0 0 4px var(--accent-glow); }
+        .form-textarea { resize: vertical; min-height: 80px; }
+        .form-hint { font-size: 11px; color: var(--text-secondary); margin-top: 4px; }
+        .form-input.error { border-color: var(--danger); animation: shake 0.4s ease; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-4px); }
+            75% { transform: translateX(4px); }
+        }
+
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+        .image-upload-area {
+            width: 100%;
+            aspect-ratio: 1;
+            max-width: 200px;
+            margin: 0 auto 16px;
+            border: 2px dashed var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all var(--transition);
+            overflow: hidden;
+            position: relative;
+            background: var(--bg);
+            font-size: 48px;
+            color: var(--text-secondary);
+        }
+
+        .image-upload-area:hover { border-color: var(--text); transform: scale(1.02); }
+        .image-upload-area.has-image { border-style: solid; border-color: var(--text); }
+        .image-upload-area img { width: 100%; height: 100%; object-fit: cover; }
+        .image-upload-area .remove-image {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            width: 30px;
+            height: 30px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow);
+        }
+
+        /* ===== CART ===== */
+        .cart-item {
+            display: flex;
+            gap: 14px;
+            padding: 14px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            margin-bottom: 10px;
+            align-items: center;
+            transition: all var(--transition);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn { from { opacity: 0; transform: translateX(-20px); } to { opacity: 1; transform: translateX(0); } }
+
+        .cart-item-image {
+            width: 52px;
+            height: 52px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+            flex-shrink: 0;
+            overflow: hidden;
+            border: 1px solid var(--border);
+        }
+
+        .cart-item-image img { width: 100%; height: 100%; object-fit: cover; }
+        .cart-item-info { flex: 1; min-width: 0; }
+        .cart-item-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cart-item-price { font-size: 13px; color: var(--text-secondary); }
+
+        .qty-control { display: flex; align-items: center; gap: 8px; }
+        .qty-btn {
+            width: 32px;
+            height: 32px;
+            border: 2px solid var(--border);
+            background: var(--bg);
+            color: var(--text);
+            border-radius: var(--radius-xs);
+            cursor: pointer;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all var(--transition);
+            font-weight: 700;
+        }
+
+        .qty-btn:hover { border-color: var(--text); background: var(--text); color: var(--bg); }
+        .qty-value { min-width: 24px; text-align: center; font-weight: 700; font-size: 15px; }
+
+        .cart-total {
+            margin-top: 16px;
+            padding: 18px;
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .total-label { font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); font-weight: 600; }
+        .total-price { font-size: 22px; font-weight: 700; }
+
+        /* ===== ORDERS ===== */
+        .order-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+            box-shadow: var(--shadow-sm);
+            animation: slideIn 0.3s ease;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .order-id { font-weight: 700; font-size: 15px; }
+        .order-date { font-size: 11px; color: var(--text-secondary); }
+
+        .order-status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 100px;
+            font-size: 10px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-pending { background: var(--warning); color: #000; }
+        .status-processing { background: #3b82f6; color: white; }
+        .status-shipped { background: #8b5cf6; color: white; }
+        .status-delivered { background: var(--success); color: white; }
+        .status-cancelled { background: var(--danger); color: white; }
+
+        .order-address-block {
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin: 10px 0;
+            padding: 12px;
+            background: var(--bg);
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border);
+            line-height: 1.6;
+        }
+
+        .order-items { font-size: 13px; color: var(--text-secondary); margin-bottom: 8px; }
+        .order-total { font-weight: 700; font-size: 15px; }
+
+        /* ===== NEWS ===== */
+        .news-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 18px;
+            margin-bottom: 12px;
+            cursor: pointer;
+            position: relative;
+            box-shadow: var(--shadow-sm);
+            transition: all var(--transition);
+        }
+
+        .news-card:hover { border-color: var(--text); transform: translateY(-2px); box-shadow: var(--shadow); }
+        .news-actions { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; opacity: 0; transition: all var(--transition); }
+        .news-card:hover .news-actions { opacity: 1; }
+        .news-date { font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; font-weight: 600; }
+        .news-title { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
+        .news-text { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+        .news-author-badge { display: inline-block; padding: 2px 8px; border-radius: 100px; font-size: 9px; font-weight: 600; border: 1px solid var(--text); margin-bottom: 8px; }
+
+        /* ===== FAVORITES PAGE ===== */
+        .favorites-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
+        }
+
+        /* ===== MODAL ===== */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: var(--modal-backdrop);
+            z-index: 200;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(6px);
+        }
+
+        .modal-overlay.active { opacity: 1; visibility: visible; }
+
+        .modal {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px;
+            max-width: 520px;
+            width: 92%;
+            max-height: 90vh;
+            overflow-y: auto;
+            transform: translateY(30px) scale(0.95);
+            transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: var(--shadow-xl);
+        }
+
+        .modal-overlay.active .modal { transform: translateY(0) scale(1); }
+        .modal-title { font-size: 20px; font-weight: 700; margin-bottom: 18px; }
+        .modal-text { font-size: 14px; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.7; }
+        .modal-actions { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+
+        /* ===== NOTIFICATION ===== */
+        .notification-container {
+            position: fixed;
+            top: 12px;
+            right: 12px;
+            z-index: 300;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            max-width: 380px;
+            width: calc(100% - 24px);
+            pointer-events: none;
+        }
+
+        .notification {
+            background: var(--notification-bg);
+            color: var(--notification-text);
+            padding: 14px 18px;
+            border-radius: var(--radius);
+            font-size: 13px;
+            font-weight: 500;
+            box-shadow: var(--shadow-lg);
+            pointer-events: all;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            animation: slideInRight 0.35s ease;
+            border: 1px solid var(--border);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .notification.removing { animation: slideOutRight 0.3s ease forwards; }
+
+        @keyframes slideInRight { from { transform: translateX(120%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+        @keyframes slideOutRight { from { transform: translateX(0); opacity: 1; } to { transform: translateX(120%); opacity: 0; } }
+
+        .notification-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            height: 3px;
+            background: var(--notification-text);
+            opacity: 0.25;
+            animation: progressShrink 3.5s linear forwards;
+        }
+
+        @keyframes progressShrink { from { width: 100%; } to { width: 0%; } }
+
+        .notification-close { background: none; border: none; color: var(--notification-text); cursor: pointer; font-size: 18px; opacity: 0.5; flex-shrink: 0; }
+        .notification-close:hover { opacity: 1; }
+        .notification-icon { font-size: 22px; flex-shrink: 0; }
+
+        /* ===== EMPTY STATE ===== */
+        .empty-state { text-align: center; padding: 50px 20px; color: var(--text-secondary); }
+        .empty-icon { font-size: 56px; margin-bottom: 12px; opacity: 0.4; }
+        .empty-text { font-size: 14px; }
+
+        /* ===== FAB ===== */
+        .fab {
+            position: fixed;
+            bottom: calc(var(--bottom-nav-height) + 18px);
+            right: 16px;
+            width: 52px;
+            height: 52px;
+            background: var(--text);
+            color: var(--bg);
+            border: none;
+            border-radius: 50%;
+            font-size: 26px;
+            cursor: pointer;
+            z-index: 50;
+            box-shadow: var(--shadow-lg);
+            transition: all var(--transition);
+            display: none;
+        }
+
+        .fab:hover { transform: scale(1.1); box-shadow: var(--shadow-xl); }
+        .fab.visible { display: flex; align-items: center; justify-content: center; animation: fabIn 0.4s ease; }
+
+        @keyframes fabIn { from { transform: scale(0); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+            .tabs { display: none; }
+            .bottom-nav { display: block; }
+            .fab { bottom: calc(var(--bottom-nav-height) + 14px); right: 12px; }
+            .notification-container { top: 8px; right: 8px; max-width: calc(100% - 16px); }
+            .form-row { grid-template-columns: 1fr; }
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+            .modal { padding: 20px; }
+            .search-container { flex-direction: column; }
+            .dashboard-grid { grid-template-columns: 1fr 1fr; }
+        }
+
+        @media (min-width: 769px) {
+            .bottom-nav { display: none; }
+            .tabs { display: flex; }
+            .fab { bottom: 28px; right: 24px; }
+            body { padding-bottom: 16px; }
+        }
+
+        @media (min-width: 768px) {
+            .products-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+        }
     </style>
 </head>
 <body>
-    <div class="header">
-        <h1>📊 Crypto Tracker Pro</h1>
-        <div class="ws-badge" id="wsBadge">🟢 Live</div>
+
+    <!-- HEADER -->
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo" onclick="navigateTo('catalog')">MONO<span style="color:var(--text);">•</span>STORE</div>
+            <div class="header-actions">
+                <button class="icon-btn" onclick="navigateTo('favorites')" title="Избранное">❤️</button>
+                <button class="icon-btn" onclick="navigateTo('settings')" title="Настройки">⚙️</button>
+                <button class="icon-btn" onclick="navigateTo('cart')" id="cartIconBtn" title="Корзина">
+                    🛒
+                    <span class="badge" id="cartBadge" style="display:none">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- SEARCH & FILTERS -->
+    <div class="search-container" id="searchContainer">
+        <input type="text" class="search-input" id="searchInput" placeholder="Поиск по товарам..." oninput="handleSearch()">
+        <button class="sort-btn" id="sortBtn" onclick="toggleSort()">↕️ Сортировка</button>
+        <button class="filter-btn" id="filterBtn" onclick="toggleFilters()">🔍 Фильтры</button>
+        <div class="filters-panel" id="filtersPanel" style="display:none;"></div>
     </div>
 
-    <div class="nav-scroll" id="topNav">
-        <button class="active" data-tab="prices">💰 Цены</button>
-        <button data-tab="portfolio">💼 Портфель</button>
-        <button data-tab="favorites">⭐ Избранное</button>
-        <button data-tab="alerts">🔔 Алерты</button>
-        <button data-tab="trading">📈 Трейдинг</button>
-        <button data-tab="tools">🛠 Инструменты</button>
-        <button data-tab="news">📰 Новости</button>
-        <button data-tab="converter">💱 Конвертер</button>
-        <button data-tab="profile">👤 Профиль</button>
-    </div>
+    <!-- TABS -->
+    <nav class="tabs" id="tabsNav">
+        <button class="tab active" data-tab="profile">Профиль</button>
+        <button class="tab" data-tab="catalog">Каталог</button>
+        <button class="tab" data-tab="favorites">❤️ Избранное</button>
+        <button class="tab" data-tab="cart">Корзина</button>
+        <button class="tab" data-tab="orders">Заказы</button>
+        <button class="tab" data-tab="news">Новости</button>
+        <button class="tab" data-tab="settings">Настройки</button>
+    </nav>
 
-    <div class="main" id="mainContent">
-        <!-- PRICES -->
-        <div class="tab active" id="tab-prices">
-            <input type="text" class="search" id="searchInput" placeholder="🔍 Поиск криптовалюты...">
-            <div id="categoryTags" style="margin-bottom:8px;"></div>
-            <div class="section-title">📈 Лидеры роста</div><div class="grid-2" id="gainersGrid"></div>
-            <div class="section-title">📉 Падение</div><div class="grid-2" id="losersGrid"></div>
-            <div class="section-title">🔥 Все монеты</div><div class="grid-2" id="popularGrid"></div>
+    <main class="main-content" id="mainContent">
+        <section class="section active" id="section-profile"></section>
+        <section class="section" id="section-catalog"></section>
+        <section class="section" id="section-favorites"></section>
+        <section class="section" id="section-cart"></section>
+        <section class="section" id="section-orders"></section>
+        <section class="section" id="section-news"></section>
+        <section class="section" id="section-settings"></section>
+        <section class="section" id="section-probes"></section>
+    </main>
+
+    <button class="fab" id="fabAdd" onclick="handleFabClick()">+</button>
+
+    <nav class="bottom-nav" id="bottomNav">
+        <div class="bottom-nav-inner">
+            <button class="bottom-nav-item active" data-tab="profile" onclick="navigateTo('profile')"><span class="bottom-nav-icon">👤</span>Профиль</button>
+            <button class="bottom-nav-item" data-tab="catalog" onclick="navigateTo('catalog')"><span class="bottom-nav-icon">🛍</span>Каталог</button>
+            <button class="bottom-nav-item" data-tab="favorites" onclick="navigateTo('favorites')"><span class="bottom-nav-icon">❤️</span>Избранное</button>
+            <button class="bottom-nav-item" data-tab="cart" onclick="navigateTo('cart')"><span class="bottom-nav-icon">🛒<span class="bottom-nav-badge" id="mobileCartBadge" style="display:none">0</span></span>Корзина</button>
+            <button class="bottom-nav-item" data-tab="orders" onclick="navigateTo('orders')"><span class="bottom-nav-icon">📦</span>Заказы</button>
         </div>
+    </nav>
 
-        <!-- PORTFOLIO -->
-        <div class="tab" id="tab-portfolio">
-            <div class="card" style="text-align:center;">
-                <div style="font-size:10px;color:var(--sub);">ОБЩАЯ СТОИМОСТЬ</div>
-                <div style="font-size:36px;font-weight:800;margin:6px 0;" id="pfValue">$0.00</div>
-                <div id="pfPnl" style="font-size:13px;"></div>
-            </div>
-            <div id="pfList"></div>
-            <button class="btn btn-primary" id="btnAddPf">+ Добавить монету</button>
-            <button class="btn btn-outline" id="btnClearPf">Очистить всё</button>
-            <button class="btn btn-outline" id="btnExport">📥 Экспорт CSV</button>
-        </div>
+    <div class="notification-container" id="notificationContainer"></div>
 
-        <!-- FAVORITES -->
-        <div class="tab" id="tab-favorites"><div class="grid-2" id="favGrid"></div></div>
-
-        <!-- ALERTS -->
-        <div class="tab" id="tab-alerts">
-            <div id="alertList"></div>
-            <button class="btn btn-primary" id="btnAddAlert">+ Новый алерт</button>
-        </div>
-
-        <!-- TRADING -->
-        <div class="tab" id="tab-trading">
-            <div class="card" style="text-align:center;">
-                <div style="font-size:10px;color:var(--sub);">БАЛАНС</div>
-                <div style="font-size:36px;font-weight:800;margin:6px 0;" id="tradeBal">$10,000</div>
-                <div id="tradePnl" style="font-size:13px;"></div>
-            </div>
-            <button class="btn btn-primary" id="btnBuy">📈 Купить</button>
-            <button class="btn btn-danger" id="btnSell">📉 Продать</button>
-            <div id="tradeList" style="margin-top:10px;"></div>
-            <button class="btn btn-outline btn-sm" id="btnResetTrade">Сбросить</button>
-        </div>
-
-        <!-- TOOLS -->
-        <div class="tab" id="tab-tools">
-            <div class="card">
-                <div class="card-header">🎯 Калькулятор прибыли</div>
-                <input type="text" id="calcSym" placeholder="Символ монеты (BTC)">
-                <input type="number" id="calcInv" placeholder="Сумма инвестиции ($)">
-                <input type="number" id="calcTarget" placeholder="Целевая цена ($)">
-                <button class="btn btn-primary" id="btnCalc">Рассчитать</button>
-                <div id="calcRes" style="margin-top:10px;font-size:12px;"></div>
-            </div>
-            <div class="card">
-                <div class="card-header">🏷 Категории</div>
-                <div id="toolsCatTags"></div>
-            </div>
-            <div class="card">
-                <div class="card-header">📝 Заметки</div>
-                <input type="text" id="noteSym" placeholder="Монета">
-                <input type="text" id="noteText" placeholder="Текст заметки">
-                <button class="btn btn-primary" id="btnAddNote">+ Добавить</button>
-                <button class="btn btn-outline btn-sm" id="btnViewNotes">📋 Мои заметки</button>
-                <div id="notesList" style="margin-top:8px;"></div>
-            </div>
-        </div>
-
-        <!-- NEWS -->
-        <div class="tab" id="tab-news">
-            <div class="section-title">📰 Крипто-новости</div>
-            <div id="newsList"><div class="loading"><div class="spinner"></div>Загрузка...</div></div>
-        </div>
-
-        <!-- CONVERTER -->
-        <div class="tab" id="tab-converter">
-            <div class="card">
-                <div class="card-header">💱 Конвертер</div>
-                <select id="convFrom"><option value="BTC">Bitcoin</option><option value="ETH">Ethereum</option><option value="USDT">Tether</option></select>
-                <input type="number" id="convAmt" placeholder="Количество" value="1">
-                <div style="text-align:center;font-size:20px;padding:6px;">⬇</div>
-                <select id="convTo"><option value="USDT">Tether</option><option value="BTC">Bitcoin</option><option value="USD">US Dollar</option></select>
-                <div style="text-align:center;font-size:22px;font-weight:700;padding:10px;" id="convRes">= $0.00</div>
-            </div>
-        </div>
-
-        <!-- PROFILE -->
-        <div class="tab" id="tab-profile">
-            <div class="card" style="text-align:center;">
-                <div style="width:64px;height:64px;border-radius:50%;background:var(--accent);margin:0 auto 10px;display:flex;align-items:center;justify-content:center;font-size:28px;">👤</div>
-                <div style="font-size:18px;font-weight:700;" id="profName">Пользователь</div>
-            </div>
-            <div class="card">
-                <div class="card-header">⚙️ Настройки</div>
-                <div class="toggle-row">
-                    <span>🌙 Тёмная тема</span>
-                    <div class="switch on" id="themeSwitch"></div>
-                </div>
-                <div class="toggle-row">
-                    <span>🔔 Уведомления</span>
-                    <div class="switch" id="notifSwitch"></div>
-                </div>
-            </div>
-            <div class="card">
-                <div class="card-header">📋 Информация</div>
-                <div class="stat-row"><span>Сессии</span><span id="infoVisits">1</span></div>
-                <div class="stat-row"><span>Версия</span><span>8.0-pro</span></div>
-            </div>
-            <button class="btn btn-danger" id="btnResetAll">🗑 Сбросить все данные</button>
+    <div class="modal-overlay" id="modalOverlay" onclick="closeModal(event)">
+        <div class="modal" id="modal" onclick="event.stopPropagation()">
+            <div class="modal-title" id="modalTitle"></div>
+            <div class="modal-text" id="modalText"></div>
+            <div class="modal-actions" id="modalActions"></div>
         </div>
     </div>
 
-    <!-- MODAL -->
-    <div class="modal-overlay" id="coinModal">
-        <div class="modal-content">
-            <button class="modal-close" id="modalClose">✕</button>
-            <div style="font-size:20px;font-weight:700;" id="modSym"></div>
-            <div style="font-size:32px;font-weight:800;margin:8px 0;" id="modPrice"></div>
-            <div class="chart-container"><canvas id="modChart"></canvas></div>
-            <div class="grid-2" style="margin:10px 0;">
-                <div class="card" style="text-align:center;padding:10px;"><div style="font-size:9px;color:var(--sub);">24ч</div><div id="modChg">0%</div></div>
-                <div class="card" style="text-align:center;padding:10px;"><div style="font-size:9px;color:var(--sub);">Макс</div><div id="modHigh">$0</div></div>
-                <div class="card" style="text-align:center;padding:10px;"><div style="font-size:9px;color:var(--sub);">Мин</div><div id="modLow">$0</div></div>
-                <div class="card" style="text-align:center;padding:10px;"><div style="font-size:9px;color:var(--sub);">Объём</div><div id="modVol">$0</div></div>
-            </div>
-            <div id="modAnalysis" style="margin:8px 0;padding:10px;background:rgba(255,255,255,0.02);border-radius:10px;font-size:11px;"></div>
-            <button class="btn btn-primary" id="btnModFav">⭐ Избранное</button>
-            <button class="btn btn-outline" id="btnModPf">+ Портфель</button>
-            <button class="btn btn-outline" id="btnModAlert">+ Алерт</button>
-        </div>
-    </div>
-
-    <div class="toast" id="toast"></div>
-
-    <div class="bottom-nav" id="bottomNav">
-        <button class="on" data-tab="prices"><span>💰</span>Цены</button>
-        <button data-tab="portfolio"><span>💼</span>Портфель</button>
-        <button data-tab="trading"><span>📈</span>Трейдинг</button>
-        <button data-tab="tools"><span>🛠</span>Инструменты</button>
-        <button data-tab="profile"><span>👤</span>Профиль</button>
-    </div>
+    <input type="file" id="hiddenFileInput" accept="image/*" style="display:none" onchange="handleFileSelect(event)">
 
     <script>
-    var $ = function(id) { return document.getElementById(id); };
+        // ============================================
+        // ДАННЫЕ
+        // ============================================
+        const OWNER_USER_ID = 427123456;
 
-    function toast(msg) {
-        var t = $('toast'); t.textContent = msg; t.classList.add('show');
-        setTimeout(function() { t.classList.remove('show'); }, 2000);
-    }
+        const defaultUser = {
+            id: 427123456, firstName: 'Алексей', lastName: 'Иванов', username: 'alex_ivanov',
+            photoUrl: null, email: 'alex@example.com', phone: '+7 999 123-45-67',
+            country: 'Россия', city: 'Москва', address: 'ул. Примерная, д. 1, кв. 42', bio: ''
+        };
 
-    function fmt(n) {
-        if (!n || isNaN(n)) return '0.00';
-        if (n < 0.0001) return n.toFixed(8);
-        if (n < 0.01) return n.toFixed(6);
-        if (n < 1) return n.toFixed(4);
-        if (n < 100) return n.toFixed(2);
-        return n.toLocaleString('en-US', {minimumFractionDigits:2, maximumFractionDigits:2});
-    }
-    function fmtV(v) {
-        if (v > 1e12) return '$'+(v/1e12).toFixed(1)+'T';
-        if (v > 1e9) return '$'+(v/1e9).toFixed(1)+'B';
-        if (v > 1e6) return '$'+(v/1e6).toFixed(0)+'M';
-        return '$'+(v/1e3).toFixed(0)+'K';
-    }
+        const defaultProducts = [
+            { id: 1, name: 'Минималистичный рюкзак', price: 4900, image: '🎒', category: 'Аксессуары', description: 'Чёрный рюкзак из прочной ткани', dop: '30×45×15 см', isDefault: true, rating: 4.5, reviews: [] },
+            { id: 2, name: 'Белая футболка', price: 1900, image: '👕', category: 'Одежда', description: 'Базовая футболка из органического хлопка', dop: '100% хлопок', isDefault: true, rating: 4.8, reviews: [] },
+            { id: 3, name: 'Чёрные джинсы', price: 5900, image: '👖', category: 'Одежда', description: 'Классические прямые джинсы', dop: 'S-XXL', isDefault: true, rating: 4.2, reviews: [] },
+            { id: 4, name: 'Кожаный ремень', price: 2900, image: '🪢', category: 'Аксессуары', description: 'Натуральная кожа', dop: '3.5 см', isDefault: true, rating: 4.0, reviews: [] },
+            { id: 5, name: 'Керамическая кружка', price: 1200, image: '☕', category: 'Дом', description: 'Ручная работа', dop: '350 мл', isDefault: true, rating: 4.9, reviews: [] },
+            { id: 6, name: 'Блокнот A5', price: 800, image: '📓', category: 'Канцелярия', description: 'Твёрдая обложка', dop: '192 стр.', isDefault: true, rating: 4.3, reviews: [] }
+        ];
 
-    function safeGet(k, d) { try { var v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch(e) { return d; } }
-    function safeSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch(e) { toast('Хранилище полно'); } }
+        defaultProducts[0].reviews = [{ userId: 1, userName: 'Мария', rating: 5, text: 'Отличный рюкзак!', date: '2026-06-10' }];
+        defaultProducts[1].reviews = [{ userId: 1, userName: 'Анна', rating: 5, text: 'Идеальная футболка.', date: '2026-06-12' }];
+        defaultProducts[4].reviews = [{ userId: 3, userName: 'Сергей', rating: 5, text: 'Лучшая кружка!', date: '2026-06-14' }];
 
-    var allCoins = [], favs = safeGet('fav', []), pf = safeGet('pf', []);
-    var alerts = safeGet('al', []), trades = safeGet('tr', []), notes = safeGet('nt', []);
-    var bal = parseFloat(safeGet('bal', '10000')), curCoin = 'BTC';
-    var dark = true, visits = parseInt(safeGet('vis', '0')) + 1;
-    safeSet('vis', visits);
+        const defaultNews = [
+            { id: 1, date: '2026-06-18', title: 'Новая коллекция', text: 'Представляем минималистичную коллекцию лето 2026.', authorId: OWNER_USER_ID, authorName: 'Владелец' },
+            { id: 2, date: '2026-06-12', title: 'Бесплатная доставка', text: 'При заказе от 5000₽ — бесплатная доставка.', authorId: OWNER_USER_ID, authorName: 'Владелец' }
+        ];
 
-    // API
-    async function loadData() {
-        try {
-            var r = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-            var d = await r.json();
-            allCoins = d.filter(function(i) { return i.symbol.endsWith('USDT') && !i.symbol.includes('UP') && !i.symbol.includes('DOWN') && !i.symbol.includes('BULL') && !i.symbol.includes('BEAR'); })
-                .map(function(i) { return { s: i.symbol.replace('USDT',''), p: +i.lastPrice, c: +i.priceChangePercent, h: +i.highPrice, l: +i.lowPrice, q: +i.quoteVolume }; })
-                .filter(function(c) { return c.p > 0 && c.q > 50000; });
-            allCoins.sort(function(a, b) { return b.q - a.q; });
-            allCoins.forEach(function(c, i) { c.rank = i + 1; });
-            updateAll();
-        } catch(e) { console.error(e); }
-    }
+        const ORDER_STATUSES = ['pending', 'processing', 'shipped', 'delivered'];
+        const STATUS_LABELS = { pending: 'Принят', processing: 'Готовится', shipped: 'Отправлен', delivered: 'Доставлен', cancelled: 'Отменён' };
+        const STATUS_CLASSES = { pending: 'status-pending', processing: 'status-processing', shipped: 'status-shipped', delivered: 'status-delivered', cancelled: 'status-cancelled' };
 
-    function connectWS() {
-        try {
-            var ws = new WebSocket('wss://stream.binance.com:9443/ws/!ticker@arr');
-            ws.onmessage = function(e) {
-                JSON.parse(e.data).forEach(function(t) {
-                    if (!t.s.endsWith('USDT')) return;
-                    var c = allCoins.find(function(x) { return x.s === t.s.replace('USDT',''); });
-                    if (c) { c.p = +t.c; c.c = +t.P; }
-                });
-                clearTimeout(window._ut); window._ut = setTimeout(updatePrices, 400);
+        function loadData() {
+            const saved = localStorage.getItem('monostore_data_v4');
+            if (saved) {
+                try {
+                    const d = JSON.parse(saved);
+                    return {
+                        user: d.user || defaultUser, customProducts: d.customProducts || [],
+                        customNews: d.customNews || [], cart: d.cart || {},
+                        orders: d.orders || [], favorites: d.favorites || [],
+                        settings: d.settings || { theme: 'auto', notifications: true },
+                        sortBy: d.sortBy || 'default', filterCategory: d.filterCategory || 'all'
+                    };
+                } catch(e) {}
+            }
+            return { user: defaultUser, customProducts: [], customNews: [], cart: {}, orders: [], favorites: [], settings: { theme: 'auto', notifications: true }, sortBy: 'default', filterCategory: 'all' };
+        }
+
+        function saveData() { localStorage.setItem('monostore_data_v4', JSON.stringify(appData)); }
+        const appData = loadData();
+        appData.orders.forEach(o => { if (!o.status) o.status = 'pending'; });
+        saveData();
+
+        function isOwner() { return appData.user.id === OWNER_USER_ID; }
+        function getAllProducts() {
+            let p = [...defaultProducts, ...appData.customProducts.filter(x => !defaultProducts.find(dp => dp.id === x.id))];
+            if (appData.sortBy === 'price-asc') p.sort((a,b) => a.price - b.price);
+            else if (appData.sortBy === 'price-desc') p.sort((a,b) => b.price - a.price);
+            else if (appData.sortBy === 'rating') p.sort((a,b) => (b.rating||0) - (a.rating||0));
+            else if (appData.sortBy === 'name') p.sort((a,b) => a.name.localeCompare(b.name));
+            return p;
+        }
+        function getAllNews() { return [...defaultNews, ...appData.customNews].sort((a,b) => new Date(b.date) - new Date(a.date)); }
+        function findProduct(id) { return getAllProducts().find(p => p.id === id); }
+        function genProductId() { return Math.max(...getAllProducts().map(p => p.id), 1000) + 1; }
+        function genNewsId() { return Math.max(...getAllNews().map(n => n.id), 100) + 1; }
+
+        let currentTab = 'profile', searchQuery = '', tempImageData = null, tempImageTarget = 'product';
+        let notificationCounter = 0, filtersVisible = false;
+
+        // ============================================
+        // ТЕМА
+        // ============================================
+        function applyTheme(t) {
+            if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+            else if (t === 'light') document.documentElement.removeAttribute('data-theme');
+            else { if (window.matchMedia?.('(prefers-color-scheme: dark)').matches) document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme'); }
+            appData.settings.theme = t; saveData();
+        }
+        function initTheme() { applyTheme(appData.settings.theme || 'auto'); window.matchMedia?.('(prefers-color-scheme: dark)').addEventListener('change', () => { if (appData.settings.theme === 'auto') applyTheme('auto'); }); }
+
+        // ============================================
+        // НАВИГАЦИЯ
+        // ============================================
+        function navigateTo(tab) {
+            currentTab = tab;
+            document.querySelectorAll('#tabsNav .tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+            document.querySelectorAll('#bottomNav .bottom-nav-item').forEach(i => i.classList.toggle('active', i.dataset.tab === tab));
+            document.getElementById('searchContainer').style.display = (tab === 'catalog' || tab === 'favorites') ? 'flex' : 'none';
+            document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+            const sec = document.getElementById(`section-${tab}`);
+            if (sec) sec.classList.add('active');
+            const fab = document.getElementById('fabAdd');
+            if (tab === 'catalog') { fab.textContent = '+'; fab.title = 'Создать товар'; fab.classList.add('visible'); }
+            else if (tab === 'news' && isOwner()) { fab.textContent = '✎'; fab.title = 'Создать новость'; fab.classList.add('visible'); }
+            else fab.classList.remove('visible');
+            if (tab === 'catalog') renderFiltersPanel();
+            renderSection(tab);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+        document.getElementById('tabsNav').addEventListener('click', e => { const tab = e.target.closest('.tab'); if (tab) navigateTo(tab.dataset.tab); });
+        function handleFabClick() { if (currentTab === 'catalog') openCreateProductForm(); else if (currentTab === 'news' && isOwner()) openCreateNewsForm(); }
+
+        function renderSection(tab) {
+            switch(tab) {
+                case 'profile': renderProfile(); break;
+                case 'catalog': renderCatalog(); break;
+                case 'favorites': renderFavorites(); break;
+                case 'cart': renderCart(); break;
+                case 'orders': renderOrders(); break;
+                case 'news': renderNews(); break;
+                case 'settings': renderSettings(); break;
+                case 'probes': renderProbes(); break;
+            }
+            updateCartBadge();
+        }
+
+        // ============================================
+        // УВЕДОМЛЕНИЯ
+        // ============================================
+        function showNotification(icon, msg, duration = 3500) {
+            if (appData.settings.notifications === false) return;
+            const c = document.getElementById('notificationContainer');
+            const id = `n_${++notificationCounter}`;
+            const el = document.createElement('div'); el.className = 'notification'; el.id = id;
+            el.innerHTML = `<span class="notification-icon">${icon}</span><span style="flex:1;">${escapeHtml(msg)}</span><button class="notification-close" onclick="closeNotification('${id}')">✕</button><div class="notification-progress"></div>`;
+            c.appendChild(el);
+            if (duration > 0) setTimeout(() => closeNotification(id), duration);
+        }
+        function closeNotification(id) { const el = document.getElementById(id); if (el) { el.classList.add('removing'); setTimeout(() => el.remove(), 300); } }
+
+        // ============================================
+        // АНИМАЦИЯ
+        // ============================================
+        function animateAddToCart(product, sourceElement) {
+            const flying = document.createElement('div'); flying.className = 'flying-item'; flying.textContent = product.image || '📦';
+            const sr = sourceElement.getBoundingClientRect();
+            flying.style.left = sr.left + sr.width/2 - 16 + 'px'; flying.style.top = sr.top + sr.height/2 - 16 + 'px';
+            document.body.appendChild(flying);
+            const cartIcon = document.getElementById('cartIconBtn') || document.querySelector('.bottom-nav-item[data-tab="cart"]');
+            const tr = cartIcon ? cartIcon.getBoundingClientRect() : { left: window.innerWidth - 50, top: 10 };
+            requestAnimationFrame(() => {
+                flying.style.left = tr.left + tr.width/2 - 16 + 'px'; flying.style.top = tr.top + tr.height/2 - 16 + 'px';
+                flying.style.transform = 'scale(0.3)'; flying.style.opacity = '0.7';
+            });
+            setTimeout(() => { flying.remove(); if (cartIcon) { cartIcon.style.transform = 'scale(1.3)'; setTimeout(() => cartIcon.style.transform = '', 200); } }, 600);
+        }
+
+        // ============================================
+        // ЗВЁЗДЫ И ИЗБРАННОЕ
+        // ============================================
+        function renderStars(r, interactive = false, onClick = null) {
+            let h = '<span class="stars">';
+            for (let i=1; i<=5; i++) {
+                const f = i <= Math.round(r);
+                h += `<span class="star${f?'':' empty'}${interactive?' interactive':''}" ${interactive&&onClick?`onclick="event.stopPropagation();(${onClick.toString()})(${i})"`:''}>${f?'★':'☆'}</span>`;
+            }
+            return h + '</span>';
+        }
+        function isFavorite(pid) { return appData.favorites.includes(pid); }
+        function toggleFavorite(pid, event) {
+            if (event) event.stopPropagation();
+            const idx = appData.favorites.indexOf(pid);
+            if (idx > -1) appData.favorites.splice(idx, 1); else appData.favorites.push(pid);
+            saveData();
+            if (currentTab === 'favorites') renderFavorites();
+            else if (currentTab === 'catalog') renderCatalog();
+            showNotification('❤️', idx > -1 ? 'Удалено из избранного' : 'Добавлено в избранное');
+        }
+
+        // ============================================
+        // ПРОФИЛЬ (классический)
+        // ============================================
+        function renderProfile() {
+            const u = appData.user;
+            const av = u.photoUrl ? `<img src="${u.photoUrl}" alt="avatar">` : `${u.firstName[0]}${u.lastName[0]}`;
+            document.getElementById('section-profile').innerHTML = `
+                <div class="profile-card">
+                    ${isOwner() ? '<div class="owner-badge">👑 Владелец</div>' : ''}
+                    <div class="avatar-wrapper" onclick="openProfileEditor()"><div class="avatar">${av}</div><div class="avatar-edit-badge">✎</div></div>
+                    <div class="profile-name">${escapeHtml(u.firstName)} ${escapeHtml(u.lastName)}</div>
+                    <div class="profile-email">@${escapeHtml(u.username)} · ${escapeHtml(u.email)}</div>
+                    ${u.phone ? `<p style="font-size:13px;">📞 ${escapeHtml(u.phone)}</p>` : ''}
+                    ${u.city ? `<p style="font-size:13px;color:var(--text-secondary);">📍 ${[u.country,u.city,u.address].filter(Boolean).join(', ')}</p>` : ''}
+                    <button class="btn btn-outline btn-sm" onclick="openProfileEditor()">✎ Редактировать</button>
+                    <div class="profile-stats">
+                        <div class="stat"><div class="stat-value">${appData.orders.length}</div><div class="stat-label">Заказов</div></div>
+                        <div class="stat"><div class="stat-value">${appData.favorites.length}</div><div class="stat-label">Избранное</div></div>
+                        <div class="stat"><div class="stat-value">${Object.values(appData.cart).reduce((s,q)=>s+q,0)}</div><div class="stat-label">В корзине</div></div>
+                    </div>
+                </div>
+                <button class="btn btn-outline" onclick="navigateTo('settings')">⚙️ Настройки</button>
+            `;
+        }
+
+        function openProfileEditor() {
+            const u = appData.user;
+            showModal('✎ Профиль', `
+                <div class="image-upload-area${u.photoUrl?' has-image':''}" id="profileImageUpload" onclick="document.getElementById('hiddenFileInput').click();tempImageTarget='profile';">${u.photoUrl?`<img src="${u.photoUrl}"><button class="remove-image" onclick="event.stopPropagation();removeProfileImage();">✕</button>`:'📷'}</div>
+                <div class="form-group"><label class="form-label">Имя *</label><input class="form-input" id="editFirstName" value="${escapeHtml(u.firstName)}"></div>
+                <div class="form-group"><label class="form-label">Фамилия</label><input class="form-input" id="editLastName" value="${escapeHtml(u.lastName)}"></div>
+                <div class="form-group"><label class="form-label">Username</label><input class="form-input" id="editUsername" value="${escapeHtml(u.username)}"></div>
+                <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="editEmail" value="${escapeHtml(u.email)}" type="email"></div>
+                <div class="form-group"><label class="form-label">Телефон</label><input class="form-input" id="editPhone" value="${escapeHtml(u.phone||'')}"></div>
+                <div class="form-row"><div class="form-group"><label class="form-label">Страна</label><input class="form-input" id="editCountry" value="${escapeHtml(u.country||'')}"></div><div class="form-group"><label class="form-label">Город</label><input class="form-input" id="editCity" value="${escapeHtml(u.city||'')}"></div></div>
+                <div class="form-group"><label class="form-label">Адрес</label><input class="form-input" id="editAddress" value="${escapeHtml(u.address||'')}"></div>
+            `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-sm" onclick="saveProfile()">💾 Сохранить</button>`);
+        }
+
+        function saveProfile() {
+            const n = document.getElementById('editFirstName')?.value.trim();
+            if (!n) { showNotification('⚠️','Имя обязательно'); return; }
+            appData.user.firstName = n;
+            appData.user.lastName = document.getElementById('editLastName')?.value.trim() || '';
+            appData.user.username = document.getElementById('editUsername')?.value.trim() || `user_${appData.user.id}`;
+            appData.user.email = document.getElementById('editEmail')?.value.trim() || '';
+            appData.user.phone = document.getElementById('editPhone')?.value.trim() || '';
+            appData.user.country = document.getElementById('editCountry')?.value.trim() || '';
+            appData.user.city = document.getElementById('editCity')?.value.trim() || '';
+            appData.user.address = document.getElementById('editAddress')?.value.trim() || '';
+            saveData(); closeModal(); renderProfile(); showNotification('✅','Профиль сохранён');
+        }
+
+        function removeProfileImage() {
+            appData.user.photoUrl = null; saveData();
+            const ua = document.getElementById('profileImageUpload'); if (ua) { ua.classList.remove('has-image'); ua.innerHTML = '📷'; }
+            renderProfile(); showNotification('🖼','Фото удалено');
+        }
+
+        // ============================================
+        // ЗАГРУЗКА ФОТО
+        // ============================================
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('image/')) { showNotification('⚠️','Выберите изображение'); return; }
+            if (file.size > 10*1024*1024) { showNotification('⚠️','Файл > 10 МБ'); return; }
+            const reader = new FileReader();
+            reader.onload = ev => {
+                const b64 = ev.target.result;
+                if (tempImageTarget === 'profile') {
+                    appData.user.photoUrl = b64; saveData(); renderProfile();
+                    const ua = document.getElementById('profileImageUpload');
+                    if (ua) { ua.classList.add('has-image'); ua.innerHTML = `<img src="${b64}"><button class="remove-image" onclick="event.stopPropagation();removeProfileImage();">✕</button>`; }
+                    showNotification('🖼','Фото обновлено');
+                } else {
+                    tempImageData = b64;
+                    const ua = document.getElementById('productImageUpload');
+                    if (ua) { ua.classList.add('has-image'); ua.innerHTML = `<img src="${b64}"><button class="remove-image" onclick="event.stopPropagation();clearTempImage();">✕</button>`; }
+                    showNotification('🖼','Изображение загружено');
+                }
             };
-            ws.onclose = function() { setTimeout(connectWS, 5000); };
-        } catch(e) {}
-    }
+            reader.readAsDataURL(file); e.target.value = '';
+        }
 
-    // Отрисовка
-    function coinCard(c) {
-        var f = favs.indexOf(c.s) >= 0;
-        return '<div class="coin-card" data-s="'+c.s+'" style="cursor:pointer;">'+
-            '<div class="coin-symbol">'+c.s+' <span style="font-size:9px;color:var(--dim);">#'+c.rank+'</span> '+(f?'⭐':'☆')+'</div>'+
-            '<div class="coin-price">$'+fmt(c.p)+'</div>'+
-            '<div class="coin-change '+(c.c>=0?'green':'red')+'">'+(c.c>=0?'▲+':'▼')+Math.abs(c.c).toFixed(2)+'%</div></div>';
-    }
+        function clearTempImage() {
+            tempImageData = null;
+            const ua = document.getElementById('productImageUpload'); if (ua) { ua.classList.remove('has-image'); ua.innerHTML = '📷'; }
+        }
 
-    function updatePrices() {
-        var q = ($('searchInput')?.value||'').toUpperCase();
-        var coins = q ? allCoins.filter(function(c) { return c.s.includes(q); }) : allCoins;
-        if ($('gainersGrid')) $('gainersGrid').innerHTML = coins.slice().sort(function(a,b){return b.c-a.c;}).slice(0,6).map(coinCard).join('');
-        if ($('losersGrid')) $('losersGrid').innerHTML = coins.slice().sort(function(a,b){return a.c-b.c;}).slice(0,6).map(coinCard).join('');
-        if ($('popularGrid')) $('popularGrid').innerHTML = coins.slice(0,40).map(coinCard).join('');
-        bindCards();
-    }
+        // ============================================
+        // ФИЛЬТРЫ И СОРТИРОВКА
+        // ============================================
+        function toggleFilters() {
+            filtersVisible = !filtersVisible;
+            const p = document.getElementById('filtersPanel'), b = document.getElementById('filterBtn');
+            p.style.display = filtersVisible ? 'flex' : 'none'; b.classList.toggle('active', filtersVisible);
+            if (filtersVisible) renderFiltersPanel();
+        }
+        function toggleSort() {
+            const opts = ['default','price-asc','price-desc','rating','name'];
+            const labels = ['По умолчанию','Цена ↑','Цена ↓','По рейтингу','По названию'];
+            const cur = opts.indexOf(appData.sortBy), next = (cur + 1) % opts.length;
+            appData.sortBy = opts[next]; saveData();
+            document.getElementById('sortBtn').textContent = '↕️ ' + labels[next];
+            renderCatalog(); showNotification('↕️','Сортировка: '+labels[next]);
+        }
+        function renderFiltersPanel() {
+            const panel = document.getElementById('filtersPanel'); if (!panel) return;
+            const all = getAllProducts();
+            const cats = [...new Set(all.map(p => p.category).filter(Boolean))];
+            let h = `<div class="filter-chip${appData.filterCategory==='all'?' active':''}" onclick="setFilter('all')">Все<span class="count">${all.length}</span></div>`;
+            cats.forEach(c => { const cnt = all.filter(p => p.category===c).length; h += `<div class="filter-chip${appData.filterCategory===c?' active':''}" onclick="setFilter('${escapeHtml(c)}')">${escapeHtml(c)}<span class="count">${cnt}</span></div>`; });
+            panel.innerHTML = h;
+        }
+        function setFilter(c) { appData.filterCategory = c; saveData(); renderFiltersPanel(); renderCatalog(); }
 
-    function updatePf() {
-        if (!$('pfList')) return;
-        if (!pf.length) { $('pfList').innerHTML = '<div class="loading">Портфель пуст</div>'; $('pfValue').textContent = '$0.00'; $('pfPnl').innerHTML = ''; return; }
-        var ti = 0, tc = 0;
-        $('pfList').innerHTML = pf.map(function(item, i) {
-            var c = allCoins.find(function(x) { return x.s === item.s; });
-            var cp = c ? c.p : 0, inv = item.a * item.bp, cur = item.a * cp, p = cur - inv;
-            ti += inv; tc += cur;
-            return '<div class="card" style="padding:12px;"><div style="display:flex;justify-content:space-between;"><strong>'+item.s+'</strong> <span style="color:var(--red);cursor:pointer;" data-pf="'+i+'">✕</span></div>'+
-                '<div style="font-size:10px;color:var(--sub);">'+item.a+' × $'+fmt(item.bp)+' | Сейчас: $'+fmt(cp)+'</div>'+
-                '<div style="font-weight:600;color:'+(p>=0?'var(--green)':'var(--red)')+';">P/L: $'+p.toFixed(2)+' ('+(inv>0?(p/inv*100).toFixed(1):0)+'%)</div></div>';
-        }).join('');
-        $('pfValue').textContent = '$'+fmt(tc);
-        var tp = tc - ti;
-        $('pfPnl').innerHTML = '<span style="color:'+(tp>=0?'var(--green)':'var(--red)')+';">P/L: $'+tp.toFixed(2)+'</span>';
-        document.querySelectorAll('[data-pf]').forEach(function(b) { b.onclick = function() { pf.splice(+b.dataset.pf,1); safeSet('pf',pf); updateAll(); }; });
-    }
+        // ============================================
+        // КАТАЛОГ
+        // ============================================
+        function renderCatalog() {
+            const sec = document.getElementById('section-catalog');
+            let prods = getAllProducts();
+            if (appData.filterCategory !== 'all') prods = prods.filter(p => p.category === appData.filterCategory);
+            if (searchQuery) { const q = searchQuery.toLowerCase(); prods = prods.filter(p => p.name.toLowerCase().includes(q) || (p.category||'').toLowerCase().includes(q) || (p.description||'').toLowerCase().includes(q)); }
+            const labels = { 'default':'По умолчанию','price-asc':'Цена ↑','price-desc':'Цена ↓','rating':'По рейтингу','name':'По названию' };
+            document.getElementById('sortBtn').textContent = '↕️ ' + (labels[appData.sortBy]||'Сортировка');
+            if (!prods.length) { sec.innerHTML = '<div class="empty-state"><div class="empty-icon">🔍</div><div class="empty-text">Ничего не найдено</div></div>'; return; }
+            sec.innerHTML = `<div class="products-grid">${prods.map(p => createProductCard(p)).join('')}</div>`;
+        }
 
-    function updateFavs() {
-        if (!$('favGrid')) return;
-        var fcs = allCoins.filter(function(c) { return favs.indexOf(c.s) >= 0; });
-        $('favGrid').innerHTML = fcs.length ? fcs.map(coinCard).join('') : '<div class="loading">Избранное пусто</div>';
-        bindCards();
-    }
+        function createProductCard(p) {
+            const img = p.imageUrl ? `<img src="${p.imageUrl}" alt="${escapeHtml(p.name)}">` : p.image;
+            const isC = !p.isDefault;
+            const fav = isFavorite(p.id);
+            const ratingBadge = p.rating ? `<div class="product-rating-badge"><span class="rating-badge">★ ${p.rating.toFixed(1)}</span></div>` : '';
+            return `<div class="product-card${isC?' custom-product':''}" id="productCard${p.id}" onclick="showProductDetail(${p.id})">
+                <div class="product-image">${img}${isC?'<div class="product-badge">Моё</div>':''}${ratingBadge}
+                    <button class="favorite-btn${fav?' active':''}" onclick="toggleFavorite(${p.id}, event)" title="${fav?'Удалить из избранного':'Добавить в избранное'}">${fav?'❤️':'🤍'}</button>
+                </div>
+                ${isC?`<div class="product-actions"><button class="product-action-btn" onclick="event.stopPropagation();openEditProductForm(${p.id})">✎</button><button class="product-action-btn danger" onclick="event.stopPropagation();deleteProduct(${p.id})">✕</button></div>`:''}
+                <div class="product-info"><div class="product-name">${escapeHtml(p.name)}</div>${p.description?`<div class="product-description">${escapeHtml(p.description)}</div>`:''}<div class="product-price">${p.price.toLocaleString()} ₽</div>${p.dop?`<div class="product-dop">${escapeHtml(p.dop)}</div>`:''}<button class="btn" id="addBtn${p.id}" onclick="event.stopPropagation(); addToCart(${p.id}, this)">В корзину</button></div></div>`;
+        }
 
-    function updateAlerts() {
-        if (!$('alertList')) return;
-        if (!alerts.length) { $('alertList').innerHTML = '<div class="loading">Нет алертов</div>'; return; }
-        $('alertList').innerHTML = alerts.map(function(a, i) {
-            return '<div class="card" style="padding:12px;display:flex;justify-content:space-between;"><div><strong>'+a.s+'</strong> $'+fmt(a.p)+'</div> <span style="color:var(--red);cursor:pointer;" data-al="'+i+'">✕</span></div>';
-        }).join('');
-        document.querySelectorAll('[data-al]').forEach(function(b) { b.onclick = function() { alerts.splice(+b.dataset.al,1); safeSet('al',alerts); updateAll(); }; });
-    }
+        function showProductDetail(id) {
+            const p = findProduct(id); if (!p) return;
+            const img = p.imageUrl ? `<img src="${p.imageUrl}" alt="${escapeHtml(p.name)}" style="width:100%;height:100%;object-fit:cover;">` : `<span style="font-size:64px;">${p.image}</span>`;
+            const fav = isFavorite(p.id);
+            let reviewsHtml = '';
+            if (p.reviews?.length) {
+                reviewsHtml = '<h4 style="margin:12px 0 8px;font-size:13px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);">Отзывы (' + p.reviews.length + ')</h4>';
+                p.reviews.forEach(r => { reviewsHtml += `<div class="review-card"><div class="review-header"><span class="review-author">${escapeHtml(r.userName)}</span><span class="review-date">${r.date}</span></div><div style="margin-bottom:4px;">${renderStars(r.rating)}</div><div class="review-text">${escapeHtml(r.text)}</div></div>`; });
+            }
+            window._tempReviewRating = 5;
+            showModal(escapeHtml(p.name), `
+                <div style="width:100%;aspect-ratio:1;background:var(--bg);display:flex;align-items:center;justify-content:center;border-radius:var(--radius-sm);overflow:hidden;margin-bottom:16px;border:1px solid var(--border);">${img}</div>
+                <div style="display:flex;align-items:center;gap:12px;margin-bottom:8px;">
+                    ${p.rating ? `<div>${renderStars(p.rating)} <span style="font-size:13px;color:var(--text-secondary);">${p.rating.toFixed(1)}</span></div>` : ''}
+                    <button class="favorite-btn${fav?' active':''}" onclick="toggleFavorite(${p.id}); this.classList.toggle('active'); this.innerHTML = isFavorite(${p.id}) ? '❤️' : '🤍';">${fav?'❤️':'🤍'}</button>
+                </div>
+                <p style="font-size:20px;font-weight:700;margin-bottom:8px;">${p.price.toLocaleString()} ₽</p>
+                ${p.description?`<p style="color:var(--text-secondary);margin-bottom:8px;">${escapeHtml(p.description)}</p>`:''}
+                ${p.dop?`<p style="margin-bottom:8px;"><strong>Дополнительно:</strong> ${escapeHtml(p.dop)}</p>`:''}
+                ${reviewsHtml}
+                <div class="review-form"><p style="font-weight:600;font-size:13px;margin-bottom:8px;">Оставить отзыв</p><div style="margin-bottom:8px;">${renderStars(0, true, (r) => window._tempReviewRating = r)}</div><textarea class="form-textarea" id="reviewText" placeholder="Ваш отзыв..." style="min-height:60px;margin-bottom:8px;"></textarea><button class="btn btn-sm" onclick="submitReview(${p.id})">⭐ Отправить</button></div>
+            `, `<button class="btn btn-outline btn-sm" onclick="closeModal()">Закрыть</button><button class="btn btn-sm" onclick="addToCart(${p.id});closeModal();">🛒 В корзину</button>`);
+        }
 
-    function updateTrading() {
-        if (!$('tradeBal')) return;
-        var holdings = {}; trades.forEach(function(t) { if(!holdings[t.s]) holdings[t.s]=0; holdings[t.s] += t.type==='BUY'?t.a:-t.a; });
-        var tv = bal;
-        Object.entries(holdings).forEach(function(e) { if(e[1]>0) { var c = allCoins.find(function(x){return x.s===e[0];}); if(c) tv += c.p*e[1]; } });
-        $('tradeBal').textContent = '$'+fmt(tv);
-        var pnl = tv - 10000;
-        $('tradePnl').innerHTML = '<span style="color:'+(pnl>=0?'var(--green)':'var(--red)')+';">P/L: $'+pnl.toFixed(2)+' ('+(pnl/100).toFixed(1)+'%)</span>';
-        $('tradeList').innerHTML = Object.entries(holdings).filter(function(e){return e[1]>0;}).map(function(e){
-            var c = allCoins.find(function(x){return x.s===e[0];}); var cv = c?c.p*e[1]:0;
-            return '<div class="card" style="padding:12px;"><strong>'+e[0]+'</strong>: '+e[1]+' ($'+fmt(cv)+')</div>';
-        }).join('') || '<div class="loading">Нет позиций</div>';
-    }
+        function submitReview(pid) {
+            const text = document.getElementById('reviewText')?.value.trim();
+            const rating = window._tempReviewRating || 5;
+            if (!text) { showNotification('⚠️','Напишите отзыв'); return; }
+            const p = findProduct(pid); if (!p) return;
+            if (!p.reviews) p.reviews = [];
+            p.reviews.push({ userId: appData.user.id, userName: appData.user.firstName || 'Пользователь', rating, text, date: new Date().toISOString().slice(0,10) });
+            p.rating = Math.round(p.reviews.reduce((s,r) => s + r.rating, 0) / p.reviews.length * 10) / 10;
+            saveData(); closeModal(); showProductDetail(pid); showNotification('⭐','Отзыв добавлен!');
+        }
 
-    function updateAll() { updatePrices(); updatePf(); updateFavs(); updateAlerts(); updateTrading(); renderCats(); }
+        function openCreateProductForm() {
+            tempImageData = null;
+            showModal('➕ Новый товар', `<div class="image-upload-area" id="productImageUpload" onclick="document.getElementById('hiddenFileInput').click();tempImageTarget='product';">📷</div><p class="form-hint" style="text-align:center;margin-bottom:14px;">Фото товара</p><div class="form-group"><label class="form-label">Название *</label><input class="form-input" id="productName"></div><div class="form-group"><label class="form-label">Описание</label><textarea class="form-textarea" id="productDescription"></textarea></div><div class="form-group"><label class="form-label">Цена (₽) *</label><input class="form-input" id="productPrice" type="number" min="0"></div><div class="form-group"><label class="form-label">Дополнение</label><input class="form-input" id="productDop"></div><div class="form-group"><label class="form-label">Категория</label><input class="form-input" id="productCategory"></div>`, `<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-sm" onclick="saveNewProduct()">💾 Создать</button>`);
+        }
 
-    function bindCards() {
-        document.querySelectorAll('.coin-card').forEach(function(card) {
-            card.onclick = function() { openModal(card.dataset.s); };
-        });
-    }
+        function saveNewProduct() {
+            const name = document.getElementById('productName')?.value.trim();
+            const price = parseInt(document.getElementById('productPrice')?.value.trim());
+            if (!name) { showNotification('⚠️','Название обязательно'); return; }
+            if (isNaN(price)||price<0) { showNotification('⚠️','Введите цену'); return; }
+            appData.customProducts.push({ id: genProductId(), name, description: document.getElementById('productDescription')?.value.trim()||'', price, dop: document.getElementById('productDop')?.value.trim()||'', category: document.getElementById('productCategory')?.value.trim()||'', image: tempImageData?'🖼':'📦', imageUrl: tempImageData||null, isDefault: false, createdAt: new Date().toISOString(), rating: 0, reviews: [] });
+            saveData(); tempImageData=null; closeModal(); navigateTo('catalog'); showNotification('✅',`Товар "${name}" создан`);
+        }
 
-    // Категории
-    var cats = { 'DeFi':['UNI','AAVE','COMP','MKR'], 'Layer1':['SOL','ADA','AVAX','DOT'], 'Meme':['DOGE','SHIB','PEPE'], 'AI':['FET','AGIX','RNDR'], 'Gaming':['GALA','SAND','MANA'] };
-    function renderCats() {
-        var html = Object.keys(cats).map(function(k) { return '<span class="tag" data-cat="'+k+'">'+k+'</span>'; }).join('');
-        if ($('categoryTags')) $('categoryTags').innerHTML = html;
-        if ($('toolsCatTags')) $('toolsCatTags').innerHTML = html;
-        document.querySelectorAll('.tag').forEach(function(t) { t.onclick = function() {
-            var coins = cats[t.dataset.cat].map(function(s) { return allCoins.find(function(c){return c.s===s;}); }).filter(function(c){return c;});
-            if (coins.length) { $('popularGrid').innerHTML = coins.map(coinCard).join(''); switchTab('prices'); bindCards(); }
-        }; });
-    }
+        function openEditProductForm(id) { const p=appData.customProducts.find(x=>x.id===id); if(!p)return; tempImageData=p.imageUrl; showModal('✎ Редактировать',`<div class="image-upload-area${p.imageUrl?' has-image':''}" id="productImageUpload" onclick="document.getElementById('hiddenFileInput').click();tempImageTarget='product';">${p.imageUrl?`<img src="${p.imageUrl}"><button class="remove-image" onclick="event.stopPropagation();clearTempImage();">✕</button>`:'📷'}</div><div class="form-group"><label class="form-label">Название *</label><input class="form-input" id="productName" value="${escapeHtml(p.name)}"></div><div class="form-group"><label class="form-label">Описание</label><textarea class="form-textarea" id="productDescription">${escapeHtml(p.description||'')}</textarea></div><div class="form-group"><label class="form-label">Цена *</label><input class="form-input" id="productPrice" type="number" value="${p.price}"></div><div class="form-group"><label class="form-label">Дополнение</label><input class="form-input" id="productDop" value="${escapeHtml(p.dop||'')}"></div><div class="form-group"><label class="form-label">Категория</label><input class="form-input" id="productCategory" value="${escapeHtml(p.category||'')}"></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-sm" onclick="saveEditedProduct(${id})">💾 Сохранить</button>`); }
+        function saveEditedProduct(id) { const p=appData.customProducts.find(x=>x.id===id); if(!p)return; const n=document.getElementById('productName')?.value.trim(); const pr=parseInt(document.getElementById('productPrice')?.value.trim()); if(!n){showNotification('⚠️','Название обязательно');return;} if(isNaN(pr)||pr<0){showNotification('⚠️','Введите цену');return;} p.name=n; p.price=pr; p.description=document.getElementById('productDescription')?.value.trim()||''; p.dop=document.getElementById('productDop')?.value.trim()||''; p.category=document.getElementById('productCategory')?.value.trim()||''; p.imageUrl=tempImageData; p.image=tempImageData?'🖼':'📦'; saveData(); tempImageData=null; closeModal(); navigateTo('catalog'); showNotification('✅',`Товар "${n}" обновлён`); }
+        function deleteProduct(id) { const p=appData.customProducts.find(x=>x.id===id); if(!p)return; showModal('🗑 Удалить?',`<p>Удалить <strong>${escapeHtml(p.name)}</strong>?</p>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-danger btn-sm" onclick="confirmDeleteProduct(${id})">🗑 Удалить</button>`); }
+        function confirmDeleteProduct(id) { appData.customProducts=appData.customProducts.filter(p=>p.id!==id); if(appData.cart[id]) delete appData.cart[id]; appData.favorites=appData.favorites.filter(f=>f!==id); saveData(); closeModal(); navigateTo('catalog'); showNotification('🗑','Товар удалён'); }
 
-    // Модалка
-    function openModal(s) {
-        curCoin = s; var c = allCoins.find(function(x){return x.s===s;}); if(!c) return;
-        $('modSym').textContent = s + ' #'+c.rank; $('modPrice').textContent = '$'+fmt(c.p);
-        $('modChg').textContent = (c.c>=0?'+':'')+c.c.toFixed(2)+'%'; $('modChg').style.color = c.c>=0?'var(--green)':'var(--red)';
-        $('modHigh').textContent = '$'+fmt(c.h); $('modLow').textContent = '$'+fmt(c.l); $('modVol').textContent = fmtV(c.q);
-        $('coinModal').classList.add('show'); loadChart(s);
-    }
-    $('modalClose').onclick = function() { $('coinModal').classList.remove('show'); };
-    $('coinModal').onclick = function(e) { if(e.target===$('coinModal')) $('coinModal').classList.remove('show'); };
+        // ============================================
+        // ИЗБРАННОЕ
+        // ============================================
+        function renderFavorites() {
+            const sec = document.getElementById('section-favorites');
+            const favProds = getAllProducts().filter(p => appData.favorites.includes(p.id));
+            if (!favProds.length) { sec.innerHTML = '<div class="empty-state"><div class="empty-icon">❤️</div><div class="empty-text">Нет избранных товаров</div><button class="btn btn-outline" style="margin-top:14px;max-width:200px;" onclick="navigateTo(\'catalog\')">В каталог</button></div>'; return; }
+            sec.innerHTML = `<div class="products-grid">${favProds.map(p => createProductCard(p)).join('')}</div>`;
+        }
 
-    async function loadChart(s) {
-        try {
-            var r = await fetch('https://api.binance.com/api/v3/klines?symbol='+s+'USDT&interval=1h&limit=48');
-            var prices = (await r.json()).map(function(k){return +k[4];});
-            var canvas = $('modChart'), ctx = canvas.getContext('2d');
-            var w = canvas.parentElement.offsetWidth, h = canvas.parentElement.offsetHeight || 160;
-            canvas.width = w; canvas.height = h;
-            var min = Math.min.apply(null,prices), max = Math.max.apply(null,prices), range = max-min||1;
-            var up = prices[prices.length-1] >= prices[0];
-            ctx.clearRect(0,0,w,h);
-            var grad = ctx.createLinearGradient(0,0,0,h);
-            grad.addColorStop(0, up?'rgba(0,212,170,0.2)':'rgba(255,68,102,0.2)');
-            grad.addColorStop(1, 'transparent');
-            ctx.beginPath(); ctx.strokeStyle = up?'#00d4aa':'#ff4466'; ctx.lineWidth = 2;
-            prices.forEach(function(p,i) { var x=i/(prices.length-1)*w, y=h-((p-min)/range)*(h-20)-10; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
-            ctx.stroke(); ctx.lineTo(w,h); ctx.lineTo(0,h); ctx.closePath(); ctx.fillStyle = grad; ctx.fill();
-        } catch(e) {}
-    }
+        // ============================================
+        // КОРЗИНА
+        // ============================================
+        function renderCart() {
+            const sec = document.getElementById('section-cart');
+            const entries = Object.entries(appData.cart);
+            if (!entries.length) { sec.innerHTML = '<div class="empty-state"><div class="empty-icon">🛒</div><div class="empty-text">Корзина пуста</div><button class="btn btn-outline" style="margin-top:14px;max-width:200px;" onclick="navigateTo(\'catalog\')">В каталог</button></div>'; updateCartBadge(); return; }
+            let total = 0, html = '';
+            entries.forEach(([pid,qty]) => { const p=findProduct(+pid); if(!p)return; const sub=p.price*qty; total+=sub; html+=`<div class="cart-item"><div class="cart-item-image">${p.imageUrl?`<img src="${p.imageUrl}">`:p.image}</div><div class="cart-item-info"><div class="cart-item-name">${escapeHtml(p.name)}</div><div class="cart-item-price">${p.price.toLocaleString()} ₽ × ${qty} = ${sub.toLocaleString()} ₽</div></div><div class="qty-control"><button class="qty-btn" onclick="updateCartItem(${p.id},-1)">−</button><span class="qty-value">${qty}</span><button class="qty-btn" onclick="updateCartItem(${p.id},1)">+</button></div></div>`; });
+            sec.innerHTML = `${html}<div class="cart-total"><span class="total-label">Итого</span><span class="total-price">${total.toLocaleString()} ₽</span></div><button class="btn btn-success" style="margin-top:14px;" onclick="openCheckoutForm()">📝 Оформить заказ</button><button class="btn btn-outline" style="margin-top:8px;" onclick="clearCart()">Очистить</button>`;
+            updateCartBadge();
+        }
 
-    // Кнопки
-    $('btnModFav').onclick = function() { var i = favs.indexOf(curCoin); i>=0?favs.splice(i,1):favs.push(curCoin); safeSet('fav',favs); updateAll(); toast(i>=0?'Удалено':'⭐ Добавлено'); };
-    $('btnModPf').onclick = function() {
-        var a = prompt('Количество '+curCoin+':'); if(!a||isNaN(a)) return;
-        var p = prompt('Цена покупки USD:'); if(!p||isNaN(p)) return;
-        pf.push({s:curCoin, a:+a, bp:+p}); safeSet('pf',pf); updateAll(); $('coinModal').classList.remove('show'); toast('✅ Добавлено');
-    };
-    $('btnModAlert').onclick = function() {
-        var p = prompt('Целевая цена USD:'); if(!p||isNaN(p)) return;
-        alerts.push({s:curCoin, p:+p}); safeSet('al',alerts); updateAll(); toast('🔔 Алерт создан');
-    };
+        function openCheckoutForm() {
+            if (!Object.keys(appData.cart).length) { showNotification('⚠️','Корзина пуста'); return; }
+            const u = appData.user;
+            const total = Object.entries(appData.cart).reduce((s,[pid,qty])=>{const p=findProduct(+pid); return s+(p?p.price*qty:0);},0);
+            showModal('📝 Оформление заказа', `<div style="background:var(--bg);padding:14px;border-radius:var(--radius-sm);margin-bottom:18px;border:1px solid var(--border);"><p style="font-weight:700;font-size:16px;">Сумма: ${total.toLocaleString()} ₽</p></div><div class="form-group"><label class="form-label">Имя *</label><input class="form-input" id="checkoutName" value="${escapeHtml(u.firstName+' '+u.lastName)}"></div><div class="form-group"><label class="form-label">Телефон *</label><input class="form-input" id="checkoutPhone" value="${escapeHtml(u.phone||'')}"></div><div class="form-row"><div class="form-group"><label class="form-label">Страна *</label><input class="form-input" id="checkoutCountry" value="${escapeHtml(u.country||'')}"></div><div class="form-group"><label class="form-label">Город *</label><input class="form-input" id="checkoutCity" value="${escapeHtml(u.city||'')}"></div></div><div class="form-group"><label class="form-label">Адрес *</label><input class="form-input" id="checkoutAddress" value="${escapeHtml(u.address||'')}"></div><div class="form-group"><label class="form-label">Комментарий</label><textarea class="form-textarea" id="checkoutComment" style="min-height:60px;"></textarea></div>`, `<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-success btn-sm" onclick="confirmCheckout()">✅ Подтвердить</button>`);
+        }
 
-    $('btnAddPf').onclick = function() {
-        var s = prompt('Символ:'); if(!s) return;
-        var a = prompt('Количество:'); if(!a||isNaN(a)) return;
-        var p = prompt('Цена покупки:'); if(!p||isNaN(p)) return;
-        pf.push({s:s.toUpperCase(), a:+a, bp:+p}); safeSet('pf',pf); updateAll(); switchTab('portfolio'); toast('✅ Добавлено');
-    };
-    $('btnClearPf').onclick = function() { if(pf.length&&confirm('Очистить?')) { pf=[]; safeSet('pf',pf); updateAll(); toast('Очищено'); } };
-    $('btnExport').onclick = function() {
-        if(!pf.length) return toast('Портфель пуст');
-        var csv = 'Symbol,Amount,BuyPrice\n'+pf.map(function(i){return i.s+','+i.a+','+i.bp;}).join('\n');
-        var a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv])); a.download = 'portfolio.csv'; a.click(); toast('📥 Скачано');
-    };
-    $('btnAddAlert').onclick = function() {
-        var s = prompt('Символ:'); if(!s) return;
-        var p = prompt('Цена USD:'); if(!p||isNaN(p)) return;
-        alerts.push({s:s.toUpperCase(), p:+p}); safeSet('al',alerts); updateAll(); toast('🔔 Алерт создан');
-    };
-    $('btnBuy').onclick = function() { quickTrade('BUY'); };
-    $('btnSell').onclick = function() { quickTrade('SELL'); };
-    function quickTrade(type) {
-        var s = prompt('Символ:'); if(!s) return; s = s.toUpperCase();
-        var c = allCoins.find(function(x){return x.s===s;}); if(!c) return toast('Не найдена');
-        var a = +prompt('Количество:'); if(!a||a<=0) return;
-        var t = c.p*a;
-        if(type==='BUY') { if(t>bal) return toast('Мало средств'); bal -= t; } else { bal += t; }
-        trades.push({type:type, s:s, a:a, p:c.p}); safeSet('tr',trades); safeSet('bal',bal.toString()); updateAll(); toast(type==='BUY'?'Куплено!':'Продано!');
-    }
-    $('btnResetTrade').onclick = function() { if(confirm('Сбросить?')) { bal=10000; trades=[]; safeSet('bal','10000'); safeSet('tr',trades); updateAll(); toast('Сброшено'); } };
-    $('btnCalc').onclick = function() {
-        var s = ($('calcSym').value||'').toUpperCase(), c = allCoins.find(function(x){return x.s===s;});
-        if(!c) return toast('Не найдена');
-        var inv = +($('calcInv').value||0), target = +($('calcTarget').value||0);
-        if(!inv||!target) return;
-        var coins = inv/c.p, fv = coins*target, profit = fv-inv;
-        $('calcRes').innerHTML = '<b>$'+fmt(profit)+'</b> ('+(profit/inv*100).toFixed(1)+'%)';
-    };
-    $('btnAddNote').onclick = function() {
-        var s = ($('noteSym').value||'').toUpperCase(), t = ($('noteText').value||'').trim();
-        if(!s||!t) return;
-        notes.push({s:s, t:t, d:new Date().toISOString()}); safeSet('nt',notes);
-        $('noteSym').value=''; $('noteText').value=''; updateNotes(); toast('✅ Сохранено');
-    };
-    $('btnViewNotes').onclick = function() { alert(notes.slice(-5).reverse().map(function(n){return n.s+': '+n.t;}).join('\n') || 'Нет заметок'); };
-    function updateNotes() {
-        if(!$('notesList')) return;
-        $('notesList').innerHTML = notes.slice(-5).reverse().map(function(n){ return '<div style="font-size:10px;padding:4px 0;">'+n.s+': '+n.t+'</div>'; }).join('') || '<div style="color:var(--dim);">Нет заметок</div>';
-    }
+        function confirmCheckout() {
+            const name=document.getElementById('checkoutName')?.value.trim(), phone=document.getElementById('checkoutPhone')?.value.trim(), country=document.getElementById('checkoutCountry')?.value.trim(), city=document.getElementById('checkoutCity')?.value.trim(), address=document.getElementById('checkoutAddress')?.value.trim(), comment=document.getElementById('checkoutComment')?.value.trim();
+            let errors=[]; ['checkoutName','checkoutPhone','checkoutCountry','checkoutCity','checkoutAddress'].forEach(id => { if(!document.getElementById(id)?.value.trim()) { document.getElementById(id)?.classList.add('error'); errors.push(id); } });
+            if(errors.length){showNotification('⚠️','Заполните обязательные поля');return;}
+            appData.user.country=country; appData.user.city=city; appData.user.address=address; appData.user.phone=phone;
+            const items=Object.entries(appData.cart).map(([pid,qty])=>{const p=findProduct(+pid); return {name:p?.name||'Товар',qty,price:p?.price||0};});
+            const order={id:Date.now().toString().slice(-6),date:new Date().toISOString().slice(0,10),status:'pending',items,total:items.reduce((s,i)=>s+i.price*i.qty,0),country,city,address,phone,name,comment};
+            appData.orders.push(order); appData.cart={}; saveData();
+            closeModal(); navigateTo('orders'); showNotification('✅',`Заказ #${order.id} оформлен!`,5000);
+        }
 
-    // Новости
-    async function loadNews() {
-        try {
-            var r = await fetch('https://min-api.cryptocompare.com/data/v2/news/?lang=EN&limit=10');
-            var d = await r.json();
-            $('newsList').innerHTML = d.Data.map(function(n) { return '<div class="card" style="cursor:pointer;padding:12px;" onclick="window.open(\''+n.url+'\',\'_blank\')"><div style="font-size:10px;color:var(--accent);">'+n.source+'</div><div style="font-weight:600;margin:4px 0;">'+n.title+'</div><div style="font-size:10px;color:var(--sub);">'+n.body.substring(0,100)+'...</div></div>'; }).join('');
-        } catch(e) { $('newsList').innerHTML = '<div class="loading">Ошибка загрузки</div>'; }
-    }
+        function addToCart(pid, sourceElement) { appData.cart[pid]=(appData.cart[pid]||0)+1; saveData(); updateCartBadge(); const p=findProduct(pid); if(p&&sourceElement) animateAddToCart(p, sourceElement); showNotification('🛒','Добавлено в корзину'); }
+        function updateCartItem(pid,d){if(appData.cart[pid]){appData.cart[pid]+=d; if(appData.cart[pid]<=0) delete appData.cart[pid];} saveData(); renderCart(); updateCartBadge();}
+        function clearCart(){appData.cart={}; saveData(); renderCart(); showNotification('🗑','Корзина очищена');}
+        function updateCartBadge(){const t=Object.values(appData.cart).reduce((s,q)=>s+q,0); [document.getElementById('cartBadge'),document.getElementById('mobileCartBadge')].forEach(el=>{if(el){el.textContent=t; el.style.display=t>0?'flex':'none';}});}
 
-    // Конвертер
-    function convert() {
-        var from = $('convFrom').value, to = $('convTo').value, amt = +($('convAmt').value||0);
-        var fc = allCoins.find(function(c){return c.s===from;}), tc = allCoins.find(function(c){return c.s===to;});
-        var fp = from==='USD'?1:fc?fc.p:0, tp = to==='USD'?1:tc?tc.p:0;
-        var res = tp>0?(amt*fp)/tp:0;
-        $('convRes').textContent = '= '+(to==='USD'?'$':'')+fmt(res)+' '+to;
-    }
-    $('convFrom').onchange = convert; $('convTo').onchange = convert; $('convAmt').oninput = convert;
+        // ============================================
+        // ЗАКАЗЫ
+        // ============================================
+        function renderOrders() {
+            const sec = document.getElementById('section-orders');
+            if (!appData.orders.length) { sec.innerHTML = '<div class="empty-state"><div class="empty-icon">📦</div><div class="empty-text">Нет заказов</div></div>'; return; }
+            sec.innerHTML = appData.orders.slice().reverse().map(o => {
+                const si = ORDER_STATUSES.indexOf(o.status);
+                const pp = o.status === 'cancelled' ? 0 : o.status === 'delivered' ? 100 : Math.max(0, (si / (ORDER_STATUSES.length - 1)) * 100);
+                const steps = ORDER_STATUSES.map((s, i) => {
+                    let cls = ''; if (o.status==='cancelled') cls=''; else if (i<si) cls='completed'; else if (i===si) cls='current';
+                    const icons = ['📋','📦','🚚','✅'];
+                    return `<div class="progress-step ${cls}"><div class="progress-dot">${cls==='completed'?'✓':icons[i]}</div><div class="progress-label">${STATUS_LABELS[s]}</div></div>`;
+                }).join('');
+                const statusMenu = isOwner() ? `<div class="status-menu"><span style="font-size:10px;color:var(--text-secondary);margin-right:4px;">Статус:</span>${ORDER_STATUSES.map(s => `<button class="status-btn${o.status===s?' active':''}" onclick="changeOrderStatus('${o.id}','${s}')">${STATUS_LABELS[s]}</button>`).join('')}<button class="status-btn" onclick="changeOrderStatus('${o.id}','cancelled')" style="color:var(--danger);">Отменить</button></div>` : '';
+                return `<div class="order-card"><div class="order-header"><span class="order-id">Заказ #${o.id}</span><span class="order-date">${o.date}</span></div><span class="order-status-badge ${STATUS_CLASSES[o.status]||'status-pending'}">${STATUS_LABELS[o.status]||o.status}</span><div class="order-progress"><div class="progress-steps">${steps}<div class="progress-fill" style="width:${pp}%;"></div></div></div><div class="order-address-block">📍 <strong>${[o.country,o.city,o.address].filter(Boolean).join(', ')}</strong></div><div class="order-total">${o.total.toLocaleString()} ₽</div>${statusMenu}</div>`;
+            }).join('');
+        }
 
-    // Навигация
-    function switchTab(name) {
-        document.querySelectorAll('.tab').forEach(function(t){t.classList.remove('active');});
-        var tab = $('tab-'+name); if(tab) tab.classList.add('active');
-        document.querySelectorAll('.nav-scroll button, .bottom-nav button').forEach(function(b){b.classList.remove('active','on');});
-        document.querySelectorAll('[data-tab="'+name+'"]').forEach(function(b){ b.classList.add(b.closest('.nav-scroll')?'active':'on'); });
-        if(name==='news') loadNews();
-        if(name==='converter') convert();
-        if(name==='favorites') updateFavs();
-        if(name==='trading') updateTrading();
-        if(name==='portfolio') updatePf();
-    }
-    document.querySelectorAll('.nav-scroll button, .bottom-nav button').forEach(function(b){ b.onclick = function(){ switchTab(b.dataset.tab); }; });
+        function changeOrderStatus(orderId, newStatus) {
+            if (!isOwner()) return;
+            const o = appData.orders.find(x => x.id === orderId); if (!o) return;
+            o.status = newStatus; saveData(); renderOrders();
+            showNotification('📦', `Заказ #${orderId}: ${STATUS_LABELS[newStatus]||newStatus}`);
+        }
 
-    // Тема
-    function applyTheme() {
-        if(dark) { document.body.classList.remove('light'); $('themeSwitch').classList.add('on'); }
-        else { document.body.classList.add('light'); $('themeSwitch').classList.remove('on'); }
-    }
-    applyTheme();
-    $('themeSwitch').onclick = function() { dark=!dark; safeSet('dark',dark); applyTheme(); toast(dark?'🌙 Тёмная':'☀️ Светлая'); };
+        // ============================================
+        // НОВОСТИ
+        // ============================================
+        function renderNews() {
+            const sec = document.getElementById('section-news');
+            const all = getAllNews();
+            if (!all.length) { sec.innerHTML = '<div class="empty-state"><div class="empty-icon">📰</div><div class="empty-text">Нет новостей</div></div>'; return; }
+            sec.innerHTML = all.map(n => {
+                const canEdit = isOwner() && appData.customNews.some(cn=>cn.id===n.id);
+                return `<div class="news-card" onclick="showNewsDetail(${n.id})">${canEdit?`<div class="news-actions"><button class="product-action-btn" onclick="event.stopPropagation();openEditNewsForm(${n.id})">✎</button><button class="product-action-btn danger" onclick="event.stopPropagation();deleteNews(${n.id})">✕</button></div>`:''}<div class="news-date">${formatDate(n.date)}</div><div class="news-title">${escapeHtml(n.title)}</div><div class="news-text">${escapeHtml(n.text.substring(0,140))}${n.text.length>140?'...':''}</div><span class="news-author-badge">👤 ${escapeHtml(n.authorName||'Автор')}</span></div>`;
+            }).join('');
+        }
 
-    // Сброс
-    $('btnResetAll').onclick = function() { if(confirm('Сбросить всё?')) { localStorage.clear(); pf=[]; favs=[]; alerts=[]; trades=[]; notes=[]; bal=10000; updateAll(); toast('Сброшено'); } };
+        function showNewsDetail(id) { const n=getAllNews().find(x=>x.id===id); if(!n)return; showModal(escapeHtml(n.title),`<p style="line-height:1.7;">${escapeHtml(n.text)}</p>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Закрыть</button>`); }
+        function openCreateNewsForm() { if(!isOwner()){showNotification('⛔','Только владелец');return;} showModal('📰 Новая новость',`<div class="form-group"><label class="form-label">Заголовок *</label><input class="form-input" id="newsTitle"></div><div class="form-group"><label class="form-label">Дата</label><input class="form-input" id="newsDate" type="date" value="${new Date().toISOString().slice(0,10)}"></div><div class="form-group"><label class="form-label">Текст *</label><textarea class="form-textarea" id="newsText" style="min-height:120px;"></textarea></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-sm" onclick="saveNewNews()">💾 Опубликовать</button>`); }
+        function saveNewNews() { const t=document.getElementById('newsTitle')?.value.trim(),x=document.getElementById('newsText')?.value.trim(); if(!t||!x){showNotification('⚠️','Заполните поля');return;} appData.customNews.push({id:genNewsId(),title:t,date:document.getElementById('newsDate')?.value||new Date().toISOString().slice(0,10),text:x,authorId:appData.user.id,authorName:`${appData.user.firstName} ${appData.user.lastName}`,createdAt:new Date().toISOString()}); saveData();closeModal();navigateTo('news');showNotification('📰','Новость опубликована'); }
+        function openEditNewsForm(id){const n=appData.customNews.find(x=>x.id===id);if(!n)return;showModal('✎ Редактировать',`<div class="form-group"><label class="form-label">Заголовок</label><input class="form-input" id="newsTitle" value="${escapeHtml(n.title)}"></div><div class="form-group"><label class="form-label">Дата</label><input class="form-input" id="newsDate" type="date" value="${n.date}"></div><div class="form-group"><label class="form-label">Текст</label><textarea class="form-textarea" id="newsText" style="min-height:120px;">${escapeHtml(n.text)}</textarea></div>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-sm" onclick="saveEditedNews(${id})">💾 Сохранить</button>`);}
+        function saveEditedNews(id){const n=appData.customNews.find(x=>x.id===id);if(!n)return;n.title=document.getElementById('newsTitle')?.value.trim()||n.title;n.date=document.getElementById('newsDate')?.value||n.date;n.text=document.getElementById('newsText')?.value.trim()||n.text;saveData();closeModal();navigateTo('news');showNotification('✅','Новость обновлена');}
+        function deleteNews(id){const n=appData.customNews.find(x=>x.id===id);if(!n)return;showModal('🗑 Удалить?',`<p>Удалить <strong>${escapeHtml(n.title)}</strong>?</p>`,`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-danger btn-sm" onclick="confirmDeleteNews(${id})">🗑 Удалить</button>`);}
+        function confirmDeleteNews(id){appData.customNews=appData.customNews.filter(n=>n.id!==id);saveData();closeModal();navigateTo('news');showNotification('🗑','Новость удалена');}
 
-    // Поиск
-    $('searchInput').oninput = function() { updatePrices(); };
+        // ============================================
+        // НАСТРОЙКИ (с дашбордом для владельца)
+        // ============================================
+        function renderSettings() {
+            const ct = appData.settings.theme || 'auto';
+            let dashboardHtml = '';
+            
+            if (isOwner()) {
+                const totalOrders = appData.orders.length;
+                const totalRevenue = appData.orders.reduce((s, o) => s + o.total, 0);
+                const pendingOrders = appData.orders.filter(o => o.status === 'pending').length;
+                const totalProducts = getAllProducts().length;
+                const totalFavorites = appData.favorites.length;
+                const totalReviews = getAllProducts().reduce((s, p) => s + (p.reviews?.length || 0), 0);
+                
+                const productSales = {};
+                appData.orders.forEach(o => { o.items?.forEach(item => { productSales[item.name] = (productSales[item.name] || 0) + item.qty; }); });
+                const topProducts = Object.entries(productSales).sort((a,b) => b[1] - a[1]).slice(0, 3);
+                
+                dashboardHtml = `
+                    <div class="settings-card">
+                        <h3 style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;color:var(--text-secondary);">📊 Дашборд владельца</h3>
+                        <div class="dashboard-grid">
+                            <div class="dashboard-card"><div class="dashboard-icon">📦</div><div class="dashboard-value">${totalOrders}</div><div class="dashboard-label">Всего заказов</div></div>
+                            <div class="dashboard-card"><div class="dashboard-icon">💰</div><div class="dashboard-value">${totalRevenue.toLocaleString()} ₽</div><div class="dashboard-label">Выручка</div></div>
+                            <div class="dashboard-card"><div class="dashboard-icon">⏳</div><div class="dashboard-value">${pendingOrders}</div><div class="dashboard-label">Ожидают</div></div>
+                            <div class="dashboard-card"><div class="dashboard-icon">🛍</div><div class="dashboard-value">${totalProducts}</div><div class="dashboard-label">Товаров</div></div>
+                            <div class="dashboard-card"><div class="dashboard-icon">❤️</div><div class="dashboard-value">${totalFavorites}</div><div class="dashboard-label">Избранное</div></div>
+                            <div class="dashboard-card"><div class="dashboard-icon">⭐</div><div class="dashboard-value">${totalReviews}</div><div class="dashboard-label">Отзывов</div></div>
+                        </div>
+                        ${topProducts.length ? `
+                        <h4 style="font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--text-secondary);margin:8px 0;">🔥 Популярные товары</h4>
+                        ${topProducts.map(([name,qty],i) => `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);"><span>${i+1}. ${escapeHtml(name)}</span><span style="color:var(--text-secondary);font-size:12px;">${qty} шт.</span></div>`).join('')}
+                        ` : ''}
+                    </div>
+                `;
+            }
+            
+            document.getElementById('section-settings').innerHTML = `
+                ${dashboardHtml}
+                <div class="settings-card"><h3 style="font-size:13px;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:12px;color:var(--text-secondary);">Оформление</h3><div class="theme-options"><button class="theme-option${ct==='light'?' active':''}" onclick="changeTheme('light')">☀️ Светлая</button><button class="theme-option${ct==='dark'?' active':''}" onclick="changeTheme('dark')">🌙 Тёмная</button><button class="theme-option${ct==='auto'?' active':''}" onclick="changeTheme('auto')">🔄 Авто</button></div></div>
+                <div class="settings-card"><div class="settings-row"><div><div class="settings-label">Уведомления</div></div><label class="toggle"><input type="checkbox" ${appData.settings.notifications!==false?'checked':''} onchange="toggleNotifications(this.checked)"><span class="toggle-slider"></span></label></div></div>
+                <button class="btn btn-outline" onclick="openProfileEditor()">✎ Профиль</button>
+                <button class="btn btn-danger btn-sm" style="margin-top:12px;" onclick="clearAllData()">🗑 Сбросить данные</button>
+            `;
+        }
 
-    // Запуск
-    loadData(); connectWS(); setInterval(loadData, 30000);
+        function changeTheme(t){applyTheme(t);renderSettings();showNotification('🎨',`Тема: ${t==='light'?'светлая':t==='dark'?'тёмная':'авто'}`);}
+        function toggleNotifications(v){appData.settings.notifications=v;saveData();showNotification('🔔',v?'Уведомления включены':'Уведомления выключены');}
+        function clearAllData(){showModal('⚠️ Сброс','<p>Все данные будут удалены.</p>',`<button class="btn btn-outline btn-sm" onclick="closeModal()">Отмена</button><button class="btn btn-danger btn-sm" onclick="confirmClearData()">🗑 Сбросить</button>`);}
+        function confirmClearData(){appData.customProducts=[];appData.customNews=[];appData.cart={};appData.orders=[];appData.favorites=[];appData.user={...defaultUser};saveData();closeModal();navigateTo('profile');showNotification('🗑','Данные сброшены');}
+
+        // ============================================
+        // PROBES
+        // ============================================
+        function renderProbes(){document.getElementById('section-probes').innerHTML=`<div class="probes-grid">${['🔐 Вход через TG','📤 Отправить заказ','🔗 Поделиться','🔔 Уведомление','🚀 Открыть в TG'].map((t,i)=>`<div class="probe-card" onclick="probeAction(${i})"><div class="probe-icon">${t.split(' ')[0]}</div><div class="probe-title">${t.split(' ').slice(1).join(' ')}</div></div>`).join('')}</div>`;}
+        function probeAction(i){[probeTelegramLogin,probeSendOrder,probeShareProduct,()=>showNotification('🔔','Новость'),probeOpenInTelegram][i]();}
+        function probeTelegramLogin(){appData.user={...defaultUser,country:appData.user.country,city:appData.user.city,address:appData.user.address,phone:appData.user.phone};saveData();showNotification('✅','Вход через TG');navigateTo('profile');}
+        function probeSendOrder(){if(!appData.orders.length){showNotification('⚠️','Нет заказов');return;}showModal('📤 Заказ',`<pre style="background:var(--bg);padding:12px;border-radius:var(--radius-sm);font-size:11px;overflow-x:auto;border:1px solid var(--border);">${escapeHtml(JSON.stringify(appData.orders[appData.orders.length-1],null,2))}</pre>`,`<button class="btn btn-sm" onclick="simulateSendData();closeModal();">📤 Отправить</button>`);}
+        function simulateSendData(){showNotification('📤','Данные отправлены');}
+        function probeShareProduct(){const p=getAllProducts()[Math.floor(Math.random()*getAllProducts().length)];showModal('📤 Поделиться',`<p>${escapeHtml(p.name)} — ${p.price.toLocaleString()} ₽</p>`,`<button class="btn btn-sm" onclick="window.open('https://t.me/share/url?text=${encodeURIComponent(p.name+' — '+p.price.toLocaleString()+' ₽')}','_blank');closeModal();">📤 Поделиться</button>`);}
+        function probeOpenInTelegram(){showModal('🚀 Telegram','<p>@MonochromeStoreBot</p>',`<button class="btn btn-sm" onclick="window.open('https://t.me/MonochromeStoreBot','_blank');closeModal();">🤖 Открыть</button>`);}
+
+        // ============================================
+        // УТИЛИТЫ
+        // ============================================
+        function handleSearch(){searchQuery=document.getElementById('searchInput').value.trim(); if(currentTab==='catalog') renderCatalog(); else if(currentTab==='favorites') renderFavorites();}
+        function showModal(title,content,actions){
+            document.getElementById('modalTitle').innerHTML=title;
+            document.getElementById('modalText').innerHTML=content;
+            document.getElementById('modalActions').innerHTML=actions||'<button class="btn btn-sm" onclick="closeModal()">Закрыть</button>';
+            document.getElementById('modalOverlay').classList.add('active'); document.body.style.overflow='hidden';
+        }
+        function closeModal(event){
+            if(event&&event.target!==document.getElementById('modalOverlay'))return;
+            document.getElementById('modalOverlay').classList.remove('active'); document.body.style.overflow='';
+            tempImageData=null; document.querySelectorAll('.error').forEach(el=>el.classList.remove('error'));
+        }
+        function escapeHtml(s){if(!s)return'';const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+        function formatDate(d){const m=['янв','фев','мар','апр','мая','июн','июл','авг','сен','окт','ноя','дек'];const dt=new Date(d);return`${dt.getDate()} ${m[dt.getMonth()]} ${dt.getFullYear()}`;}
+
+        // ============================================
+        // ИНИЦИАЛИЗАЦИЯ
+        // ============================================
+        function initApp(){
+            initTheme();
+            if(window.Telegram?.WebApp){const tg=window.Telegram.WebApp;tg.ready();tg.expand();if(tg.initDataUnsafe?.user){const u=tg.initDataUnsafe.user;appData.user={...appData.user,id:u.id,firstName:u.first_name,lastName:u.last_name||'',username:u.username||`user_${u.id}`,email:`${u.username||'user'}@telegram.user`,photoUrl:u.photo_url||appData.user.photoUrl};saveData();}}
+            const labels={'default':'По умолчанию','price-asc':'Цена ↑','price-desc':'Цена ↓','rating':'По рейтингу','name':'По названию'};
+            document.getElementById('sortBtn').textContent='↕️ '+(labels[appData.sortBy]||'Сортировка');
+            renderProfile(); updateCartBadge();
+            document.getElementById('fabAdd').classList.add('visible');
+        }
+
+        document.addEventListener('DOMContentLoaded', initApp);
     </script>
 </body>
-  </html>
+</html>
